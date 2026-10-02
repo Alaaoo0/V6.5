@@ -1,0 +1,2370 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محلل Binance — v6.5</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, sans-serif; background: #0d1117; color: #e6edf3; padding: 16px; min-height: 100vh; }
+  h1 { font-size: 18px; text-align: center; margin-bottom: 6px; color: #f0b90b; }
+  .subtitle { text-align: center; font-size: 12px; color: #8b949e; margin-bottom: 16px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 12px; background: #161b22; padding: 4px; border-radius: 10px; border: 1px solid #30363d; overflow-x: auto; }
+  .tab { flex: 1; min-width: 60px; padding: 8px 5px; text-align: center; border-radius: 8px; font-size: 11px; cursor: pointer; font-weight: 500; color: #8b949e; white-space: nowrap; }
+  .tab.active { background: #f0b90b; color: #0d1117; font-weight: bold; }
+  .controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  select, button, input { flex: 1; min-width: 100px; padding: 10px; border-radius: 8px; border: 1px solid #30363d; background: #161b22; color: #e6edf3; font-size: 13px; font-family: inherit; }
+  input::placeholder { color: #6e7681; }
+  button { background: #f0b90b; border-color: #f0b90b; color: #0d1117; font-weight: bold; cursor: pointer; }
+  button:active { background: #d9a700; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .analyze-btn { background: linear-gradient(135deg, #238636, #3fb950); border: none; color: white; }
+  .explode-btn { background: linear-gradient(135deg, #a371f7, #f85149); border: none; color: white; font-size: 14px; padding: 14px; }
+  .history-btn { background: linear-gradient(135deg, #1f6feb, #58a6ff); border: none; color: white; }
+  .breakout-btn { background: linear-gradient(135deg, #3fb950, #58a6ff); border: none; color: white; }
+  .journal-btn { background: linear-gradient(135deg, #f0b90b, #f85149); border: none; color: white; }
+  .backup-btn { background: linear-gradient(135deg, #58a6ff, #a371f7); border: none; color: white; }
+  .momentum-btn { background: linear-gradient(135deg, #f85149, #f0b90b, #3fb950); border: none; color: white; font-size: 15px; padding: 16px; font-weight: bold; }
+  .single-search-box { background: #161b22; border: 2px solid #3fb950; border-radius: 10px; padding: 12px; margin-bottom: 16px; }
+  .single-search-title { font-size: 13px; font-weight: bold; color: #3fb950; margin-bottom: 8px; }
+  .single-search-row { display: flex; gap: 6px; }
+  .single-search-row input { flex: 3; font-size: 14px; font-weight: bold; text-transform: uppercase; }
+  .single-search-row button { flex: 1; font-size: 12px; }
+  .quick-picks { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+  .quick-pick { padding: 4px 10px; background: #21262d; border: 1px solid #30363d; border-radius: 6px; font-size: 11px; cursor: pointer; color: #e6edf3; }
+  .quick-pick:active { background: #3fb950; color: white; }
+  .status { text-align: center; font-size: 13px; padding: 10px; border-radius: 8px; margin-bottom: 12px; display: none; }
+  .status.loading { background: #1f6feb22; color: #58a6ff; display: block; }
+  .status.error { background: #f8514922; color: #f85149; display: block; }
+  .status.success { background: #23863622; color: #3fb950; display: block; }
+  .status.explode { background: linear-gradient(135deg,#a371f722,#f8514922); color: #a371f7; display: block; border: 1px solid #a371f7; }
+  .progress-wrap { background: #0d1117; border-radius: 8px; padding: 4px; margin-bottom: 12px; border: 1px solid #30363d; display: none; }
+  .progress-wrap.show { display: block; }
+  .progress-bar { height: 8px; background: #21262d; border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #f85149, #f0b90b, #3fb950); transition: width 0.2s; width: 0%; }
+  .progress-text { font-size: 11px; color: #8b949e; text-align: center; margin-top: 4px; }
+  .token { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  .token.explode { border: 2px solid #f0b90b; background: linear-gradient(180deg, #f0b90b11 0%, #161b22 100%); }
+  .token.hot { border: 2px solid #f85149; background: linear-gradient(180deg, #f8514911 0%, #161b22 100%); }
+  .token.single { border: 2px solid #3fb950; }
+  .token.confirmed { border: 2px solid #3fb950; background: linear-gradient(180deg, #3fb95022 0%, #161b22 100%); box-shadow: 0 0 30px #3fb95066; }
+  .token-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; flex-wrap: wrap; }
+  .token-name { font-weight: bold; font-size: 15px; }
+  .token-symbol { font-size: 11px; color: #8b949e; background: #21262d; padding: 2px 8px; border-radius: 6px; }
+  .hot-badge { font-size: 11px; background: linear-gradient(135deg, #f85149, #f0b90b); color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; }
+  .confirmed-badge { font-size: 11px; background: linear-gradient(135deg, #3fb950, #238636); color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+  .token-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 13px; }
+  .stat-name { color: #8b949e; }
+  .stat-val { color: #e6edf3; font-weight: 500; }
+  .stat-val.up { color: #3fb950; }
+  .stat-val.down { color: #f85149; }
+  .stat-val.gold { color: #f0b90b; }
+  .rank { display: inline-block; background: #1f6feb; color: white; width: 22px; height: 22px; border-radius: 50%; text-align: center; line-height: 22px; font-size: 12px; font-weight: bold; margin-left: 8px; }
+  .rank.gold { background: linear-gradient(135deg, #f0b90b, #ffd700); color: #0d1117; }
+  .rank.silver { background: linear-gradient(135deg, #8b949e, #c9d1d9); color: #0d1117; }
+  .rank.bronze { background: linear-gradient(135deg, #b87333, #cd7f32); color: white; }
+  .strategy { margin-top: 8px; padding: 10px; background: #0d1117; border-radius: 6px; font-size: 12px; border-right: 3px solid #f0b90b; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .strategy-item { display: flex; justify-content: space-between; gap: 6px; }
+  .strategy-label { color: #8b949e; }
+  .strategy-value { font-weight: bold; }
+  .strategy-value.entry { color: #58a6ff; }
+  .strategy-value.target { color: #3fb950; }
+  .strategy-value.stop { color: #f85149; }
+  .forecast { margin-top: 8px; padding: 8px; background: #161b22; border-radius: 6px; font-size: 12px; color: #8b949e; border-right: 3px solid #1f6feb; }
+  .forecast b { color: #58a6ff; }
+  .reasons-wrap { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .reason-chip { font-size: 11px; padding: 4px 10px; background: #21262d; border: 1px solid #30363d; border-radius: 14px; color: #c9d1d9; }
+  .reason-chip.bull { background: #23863622; border-color: #2ea043; color: #3fb950; }
+  .reason-chip.hot { background: #f8514922; border-color: #f85149; color: #ff8a80; }
+  .reason-chip.gold { background: #f0b90b22; border-color: #f0b90b; color: #f0b90b; }
+  .reason-chip.confirm { background: #3fb95033; border-color: #3fb950; color: #3fb950; font-weight: bold; }
+  .score-gauge { display: flex; align-items: center; gap: 10px; padding: 10px; background: #0d1117; border-radius: 8px; margin-bottom: 10px; border-right: 4px solid #f0b90b; }
+  .score-circle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; flex-shrink: 0; }
+  .score-circle.high { background: linear-gradient(135deg, #f85149, #f0b90b); color: white; }
+  .score-circle.mid { background: linear-gradient(135deg, #f0b90b, #d29922); color: #0d1117; }
+  .score-circle.low { background: linear-gradient(135deg, #30363d, #6e7681); color: #e6edf3; }
+  .score-info { flex: 1; }
+  .score-title { font-weight: bold; font-size: 14px; margin-bottom: 2px; }
+  .score-desc { font-size: 11px; color: #8b949e; line-height: 1.5; }
+  .filters-bar { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filter-chip { padding: 6px 12px; background: #21262d; border: 1px solid #30363d; border-radius: 16px; font-size: 11px; cursor: pointer; color: #c9d1d9; }
+  .filter-chip.active { background: #f0b90b; color: #0d1117; border-color: #f0b90b; font-weight: bold; }
+  .empty { text-align: center; padding: 30px; color: #8b949e; font-size: 14px; }
+  .note-fab { position: fixed; top: 50%; left: 0; transform: translateY(-50%); background: #f0b90b; color: #0d1117; border: none; border-radius: 0 10px 10px 0; padding: 12px 8px; font-size: 18px; cursor: pointer; z-index: 999; font-weight: bold; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #161b22; border: 1px solid #30363d; border-radius: 14px; max-width: 520px; width: 100%; max-height: 88vh; overflow-y: auto; padding: 18px; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #30363d; }
+  .modal-title { font-size: 16px; font-weight: bold; color: #f0b90b; }
+  .modal-close { background: #21262d; border: 1px solid #30363d; color: #e6edf3; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; min-width: auto; }
+  .modal-section { margin-bottom: 16px; }
+  .modal-section h3 { font-size: 14px; color: #58a6ff; margin-bottom: 8px; }
+  .modal-section p, .modal-section li { font-size: 13px; line-height: 1.7; color: #c9d1d9; }
+  .warning-box { background: #f8514922; border: 1px solid #f85149; border-radius: 8px; padding: 12px; margin-top: 10px; }
+  .warning-box .title { color: #f85149; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
+  .warning-box p { font-size: 12.5px; line-height: 1.7; color: #ffb3ae; }
+  .info-box { background: #3fb95022; border: 1px solid #3fb950; border-radius: 8px; padding: 12px; margin-top: 10px; }
+  .info-box .title { color: #3fb950; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
+  .info-box p { font-size: 12.5px; line-height: 1.7; color: #a9e6b8; }
+  .signature { text-align: center; padding: 12px; background: linear-gradient(135deg, #f0b90b22, #a371f722); border: 1px solid #f0b90b; border-radius: 8px; margin-top: 16px; font-size: 13px; color: #f0b90b; font-weight: bold; }
+  .history-container { max-height: 70vh; overflow-y: auto; }
+  .history-item { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+  .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .history-symbol { font-weight: bold; font-size: 14px; }
+  .history-score { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #f0b90b; color: #0d1117; font-weight: bold; }
+  .history-date { font-size: 10px; color: #6e7681; margin-top: 4px; text-align: left; }
+  footer { text-align: center; font-size: 11px; color: #6e7681; margin-top: 20px; }
+  .v65-badge { display: inline-block; font-size: 10px; background: linear-gradient(135deg, #3fb950, #58a6ff); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-right: 4px; }
+  .sound-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #c9d1d9; padding: 10px; background: #21262d; border: 1px solid #30363d; border-radius: 8px; cursor: pointer; flex: 1; justify-content: center; font-weight: 500; }
+  .sound-toggle.on { background: #23863622; border-color: #2ea043; color: #3fb950; }
+  .toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; max-width: 340px; }
+  .toast { background: linear-gradient(135deg, #a371f7, #f85149); color: white; padding: 14px 18px; border-radius: 12px; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 12px; pointer-events: auto; animation: toastIn 0.4s ease, toastOut 0.4s ease 5.6s forwards; }
+  .toast.breakout { background: linear-gradient(135deg, #3fb950, #58a6ff); }
+  .toast.win { background: linear-gradient(135deg, #3fb950, #f0b90b); }
+  .toast.loss { background: linear-gradient(135deg, #f85149, #8b0000); }
+  .toast.confirmed { background: linear-gradient(135deg, #3fb950, #f0b90b); box-shadow: 0 8px 32px #3fb95080; }
+  .toast-emoji { font-size: 24px; }
+  .toast-body { flex: 1; }
+  .toast-title { font-size: 11px; opacity: 0.95; margin-bottom: 3px; }
+  .toast-symbol { font-size: 15px; font-weight: bold; }
+  .toast-score { font-size: 11px; background: rgba(255,255,255,0.28); padding: 3px 10px; border-radius: 6px; margin-top: 5px; display: inline-block; }
+  @keyframes toastIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes toastOut { to { transform: translateX(120%); opacity: 0; } }
+  .watch-panel { background: #161b22; border: 2px solid #3fb950; border-radius: 10px; padding: 12px; margin-bottom: 16px; }
+  .watch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+  .watch-title { font-size: 14px; font-weight: bold; color: #3fb950; }
+  .watch-sub { font-size: 11px; color: #8b949e; }
+  .watch-controls { display: flex; gap: 6px; flex-wrap: wrap; }
+  .watch-controls button { flex: 1; min-width: 100px; padding: 8px; font-size: 12px; }
+  .watch-item { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 10px; margin-bottom: 8px; border-right: 4px solid #58a6ff; }
+  .watch-item.broken { border-right-color: #f0b90b; background: linear-gradient(90deg, #f0b90b22, #0d1117); }
+  .watch-item.failed { border-right-color: #f85149; opacity: 0.6; }
+  .watch-item.confirmed { border-right: 4px solid #f0b90b; background: linear-gradient(90deg, #f0b90b22, #3fb95022, #0d1117); box-shadow: 0 0 30px #f0b90b66; animation: breakoutPulse 2s infinite; }
+  @keyframes breakoutPulse { 0%, 100% { box-shadow: 0 0 30px #f0b90b66; } 50% { box-shadow: 0 0 50px #f0b90b99; } }
+  .watch-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 6px; }
+  .watch-symbol { font-weight: bold; font-size: 14px; }
+  .watch-badge { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+  .watch-badge.watching { background: #58a6ff; color: white; }
+  .watch-badge.broken { background: #f0b90b; color: #0d1117; }
+  .watch-badge.confirmed { background: linear-gradient(135deg, #3fb950, #f0b90b); color: white; animation: pulse 1s infinite; font-size: 12px; padding: 5px 12px; }
+  .watch-badge.failed { background: #f85149; color: white; }
+  .watch-info { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 11px; }
+  .watch-label { color: #8b949e; }
+  .watch-val { color: #e6edf3; font-weight: 500; }
+  .watch-progress { height: 6px; background: #21262d; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+  .watch-progress-fill { height: 100%; background: linear-gradient(90deg, #58a6ff, #3fb950); }
+  .watch-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .watch-actions button { font-size: 11px; padding: 7px; flex: 1; min-width: 80px; }
+  .countdown-box { text-align: center; font-size: 11px; color: #8b949e; margin-top: 8px; }
+  .countdown-box b { color: #58a6ff; }
+  .per-coin-timer { background: #f0b90b22; border: 1px solid #f0b90b; border-radius: 6px; padding: 6px 10px; margin-top: 6px; text-align: center; }
+  .per-coin-timer b { color: #f0b90b; font-size: 15px; direction: ltr; }
+  .journal-form { background: #161b22; border: 2px solid #f0b90b; border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+  .journal-title { font-size: 14px; font-weight: bold; color: #f0b90b; margin-bottom: 10px; }
+  .jgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  label { display: block; font-size: 11px; color: #8b949e; margin-bottom: 4px; }
+  .jgrid input { width: 100%; }
+  .jbtn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat-box { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 10px; text-align: center; }
+  .stat-box-val { font-size: 17px; font-weight: bold; color: #58a6ff; margin-bottom: 2px; }
+  .stat-box-val.win { color: #3fb950; }
+  .stat-box-val.loss { color: #f85149; }
+  .stat-box-val.gold { color: #f0b90b; }
+  .stat-box-lbl { font-size: 10px; color: #8b949e; }
+  .pnl-big { text-align: center; padding: 14px; border-radius: 10px; margin-bottom: 12px; font-weight: bold; font-size: 18px; }
+  .pnl-big.pos { background: linear-gradient(135deg, #23863633, #3fb95011); border: 1px solid #3fb950; color: #3fb950; }
+  .pnl-big.neg { background: linear-gradient(135deg, #f8514933, #d2992211); border: 1px solid #f85149; color: #f85149; }
+  .pnl-big.zero { background: #161b22; border: 1px solid #30363d; color: #8b949e; }
+  .trade-item { background: #0d1117; border: 1px solid #30363d; border-radius: 10px; padding: 12px; margin-bottom: 8px; border-right: 4px solid #30363d; }
+  .trade-item.win { border-right-color: #3fb950; }
+  .trade-item.loss { border-right-color: #f85149; }
+  .trade-item.pending { border-right-color: #d29922; }
+  .trade-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; flex-wrap: wrap; }
+  .trade-symbol { font-weight: bold; font-size: 15px; }
+  .trade-badge { font-size: 11px; padding: 3px 10px; border-radius: 6px; font-weight: bold; }
+  .badge-win { background: #238636; color: white; }
+  .badge-loss { background: #f85149; color: white; }
+  .badge-pending { background: #d29922; color: #0d1117; }
+  .badge-score { background: #f0b90b; color: #0d1117; font-size: 10px; padding: 2px 8px; border-radius: 4px; }
+  .trade-details { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 12px; }
+  .d-row { display: flex; justify-content: space-between; }
+  .d-lbl { color: #8b949e; }
+  .d-val { color: #e6edf3; font-weight: 500; }
+  .d-val.up { color: #3fb950; }
+  .d-val.down { color: #f85149; }
+  .trade-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .trade-actions button { font-size: 11px; padding: 7px; flex: 1; min-width: 80px; }
+  .jfilters { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .momentum-hero { background: linear-gradient(135deg, #f8514922, #f0b90b22, #3fb95022); border: 2px solid #f0b90b; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  .momentum-hero .title { font-size: 15px; font-weight: bold; color: #f0b90b; margin-bottom: 6px; }
+  .momentum-hero .desc { font-size: 12px; color: #c9d1d9; line-height: 1.7; }
+  .momentum-hero .desc b { color: #3fb950; }
+  .mini-chart { width: 100%; height: 240px; background: #0a0d12; border: 1px solid #21262d; border-radius: 6px; margin: 8px 0; display: block; transition: height 0.2s ease; }
+  .mini-chart-wrap { position: relative; }
+  .mini-chart-legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 10px; color: #8b949e; margin-bottom: 6px; padding: 4px 0; }
+  .mini-chart-legend span { display: flex; align-items: center; gap: 4px; }
+  .mini-chart-legend .dot { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+  .dot-gold { background: #f0b90b; }
+  .dot-silver { background: #c9d1d9; }
+  .dot-green { background: #3fb950; }
+  .dot-red { background: #f85149; }
+  .backup-panel { background: #161b22; border: 2px solid #58a6ff; border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+  .rules-panel { background: linear-gradient(135deg, #f8514911, #f0b90b11, #3fb95011); border: 2px solid #f0b90b; border-radius: 12px; padding: 14px; margin-bottom: 16px; }
+  .rules-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+  .rules-title { font-size: 15px; font-weight: bold; color: #f0b90b; }
+  .rules-toggle { background: #21262d; border: 1px solid #30363d; color: #e6edf3; padding: 5px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; min-width: auto; font-weight: bold; }
+  .rules-body.hidden { display: none; }
+  .rules-list { display: grid; gap: 8px; margin-bottom: 14px; }
+  .rule-item { background: #0d1117; border-right: 4px solid #f85149; border-radius: 8px; padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; }
+  .rule-num { background: linear-gradient(135deg, #f85149, #f0b90b); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; flex-shrink: 0; }
+  .rule-text { font-size: 12.5px; line-height: 1.7; color: #e6edf3; }
+  .rule-text .no { color: #ff8a80; font-weight: bold; }
+  .rule-text .yes { color: #3fb950; font-weight: bold; }
+  .summary-table { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; margin-top: 10px; }
+  .summary-row { display: grid; grid-template-columns: 1fr 1.5fr; border-bottom: 1px solid #21262d; font-size: 12px; }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-q { padding: 8px 10px; background: #161b22; color: #8b949e; }
+  .summary-a { padding: 8px 10px; color: #e6edf3; font-weight: 500; }
+  .summary-a.ok { color: #3fb950; }
+  .summary-a.warn { color: #f0b90b; }
+  .summary-a.stop { color: #f85149; font-weight: bold; }
+  .entry-card { background: linear-gradient(135deg, #58a6ff22, #3fb95022); border: 2px solid #58a6ff; border-radius: 10px; padding: 12px; margin: 10px 0; text-align: center; }
+  .entry-card-label { font-size: 11px; color: #8b949e; margin-bottom: 6px; }
+  .entry-card-price { font-size: 22px; font-weight: bold; color: #58a6ff; font-family: 'Courier New', monospace; direction: ltr; margin: 0; transition: font-size 0.2s ease; }
+  .entry-card-hint { font-size: 11px; color: #3fb950; font-weight: 500; margin-top: 4px; }
+  .entry-card.broken { background: linear-gradient(135deg, #f0b90b33, #3fb95033); border-color: #f0b90b; }
+  .entry-card.broken .entry-card-price { color: #f0b90b; }
+  .entry-card.confirmed { background: linear-gradient(135deg, #3fb95033, #f0b90b33); border-color: #3fb950; }
+  .entry-card.confirmed .entry-card-price { color: #3fb950; }
+  .price-controls { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 6px 0; }
+  .price-zoom-btn { min-width: 44px; max-width: 44px; flex: 0 0 44px; padding: 8px; background: #21262d; color: #e6edf3; border: 1px solid #30363d; font-size: 18px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+  .price-zoom-btn:active { background: #3fb950; color: white; }
+  .live-price { font-size: 16px; font-weight: bold; color: #f0b90b; transition: color 0.15s ease; }
+  .live-pnl { font-weight: bold; transition: color 0.15s ease; }
+  .live-pnl.up { color: #3fb950; }
+  .live-pnl.down { color: #f85149; }
+  .levels-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 8px; }
+  .level-mini { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 6px; text-align: center; font-size: 10px; }
+  .level-mini-label { color: #8b949e; margin-bottom: 2px; }
+  .level-mini-val { font-size: 12px; font-weight: bold; direction: ltr; transition: font-size 0.2s ease; }
+  .level-mini.target { border-color: #3fb950; }
+  .level-mini.target .level-mini-val { color: #3fb950; }
+  .level-mini.stop { border-color: #f85149; }
+  .level-mini.stop .level-mini-val { color: #f85149; }
+  .level-mini.rr { border-color: #f0b90b; }
+  .level-mini.rr .level-mini-val { color: #f0b90b; }
+  .winrate-warning { background: #8b000033; border: 2px solid #f85149; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 12.5px; color: #ffb3ae; line-height: 1.7; }
+  .winrate-warning b { color: #f85149; }
+  .calc-panel { background: #161b22; border: 2px solid #3fb950; border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+  .calc-panel .journal-title { color: #3fb950; }
+  .calc-result-box { background: #0d1117; border: 1px solid #3fb950; border-radius: 8px; padding: 12px; margin-top: 8px; text-align: center; }
+  .calc-result-label { font-size: 11px; color: #8b949e; margin-bottom: 4px; }
+  .calc-result-value { font-size: 24px; font-weight: bold; color: #3fb950; direction: ltr; }
+  .calc-result-hint { font-size: 10px; color: #8b949e; margin-top: 4px; }
+  .ws-status { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 4px; }
+  .ws-status.connected { background: #3fb950; box-shadow: 0 0 6px #3fb950; animation: pulse 2s infinite; }
+  .ws-status.disconnected { background: #f85149; }
+  .trade-live-price { font-weight: bold; transition: color 0.2s ease; font-size: 13px; }
+  .trade-live-pnl { font-weight: bold; transition: color 0.2s ease; }
+</style>
+</head>
+<body>
+<h1>⚡ محلل Binance <span class="v65-badge">v6.5</span></h1>
+<div class="subtitle">سعر حي في الدفتر • تنبيه إغلاق شمعة 1س</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="momentum">⚡ الزخم</div>
+  <div class="tab" data-tab="explode">🚀 الكاشف</div>
+  <div class="tab" data-tab="watch">👁️ المراقبة</div>
+  <div class="tab" data-tab="journal">📒 الدفتر</div>
+  <div class="tab" data-tab="single">🔍 عملة</div>
+  <div class="tab" data-tab="history">📊 السجل</div>
+  <div class="tab" data-tab="backup">💾 نسخ</div>
+</div>
+
+<div class="rules-panel" id="rulesPanel">
+  <div class="rules-header">
+    <div class="rules-title">📋 القواعد + الخلاصة (v6.5)</div>
+    <button class="rules-toggle" id="rulesToggle">🔽 إخفاء</button>
+  </div>
+  <div class="rules-body" id="rulesBody">
+    <div class="rules-list">
+      <div class="rule-item"><div class="rule-num">1</div><div class="rule-text"><span class="no">لا تدخل عند الاختراق اللحظي</span></div></div>
+      <div class="rule-item"><div class="rule-num">2</div><div class="rule-text"><span class="yes">التنبيه عند إغلاق شمعة 1س فقط</span></div></div>
+      <div class="rule-item"><div class="rule-num">3</div><div class="rule-text"><span class="yes">إذا الشمعة أغلقت فوق الاختراق → ادخل</span></div></div>
+      <div class="rule-item"><div class="rule-num">4</div><div class="rule-text"><span class="no">إذا أغلقت تحت الاختراق = فشل</span></div></div>
+      <div class="rule-item"><div class="rule-num">5</div><div class="rule-text"><span class="yes">ادخل بعد الإغلاق</span></div></div>
+      <div class="rule-item"><div class="rule-num">6</div><div class="rule-text"><span class="no">1% فقط</span> من رأس المال</div></div>
+    </div>
+    <div class="summary-table">
+      <div class="summary-row"><div class="summary-q">اخترق لحظياً؟</div><div class="summary-a warn">⏳ لا تدخل — انتظر الإغلاق</div></div>
+      <div class="summary-row"><div class="summary-q">أغلقت 1س فوق الاختراق؟</div><div class="summary-a ok">✅ ادخل الآن</div></div>
+      <div class="summary-row"><div class="summary-q">أغلقت 1س تحت الاختراق؟</div><div class="summary-a stop">❌ تجاهل — فخ</div></div>
+      <div class="summary-row"><div class="summary-q">نزل 1% قبل الإغلاق؟</div><div class="summary-a stop">❌ فشل فوري</div></div>
+      <div class="summary-row"><div class="summary-q">BTC نازل 1%+؟</div><div class="summary-a stop">❌ لا تدخل</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="panel-momentum">
+  <div class="momentum-hero">
+    <div class="title">⚡ كاشف الزخم v6.5 <span id="wsStatusMomentum" class="ws-status disconnected"></span></div>
+    <div class="desc">
+      <b>✅ فلترة صارمة:</b> يرفض أي عملة بعيدة عن الاختراق أكثر من <b>0.2%</b><br>
+      🔴 <b>سعر حي WebSocket</b> • 🎯 <b>تنبيه إغلاق شمعة 1س</b>
+    </div>
+  </div>
+  <div class="single-search-box" style="border-color:#f0b90b">
+    <div class="single-search-title" style="color:#f0b90b">🎯 إعدادات</div>
+    <div class="controls" style="margin-bottom:8px">
+      <select id="momQuote">
+        <option value="5000000">حجم ≥ $5M</option>
+        <option value="10000000" selected>حجم ≥ $10M ⭐</option>
+        <option value="30000000">حجم ≥ $30M</option>
+      </select>
+      <select id="momTop">
+        <option value="80">أفضل 80</option>
+        <option value="100" selected>أفضل 100</option>
+        <option value="150">أفضل 150</option>
+      </select>
+    </div>
+    <div class="controls">
+      <button class="momentum-btn" id="startMomentum">⚡ ابدأ المسح</button>
+      <button class="analyze-btn" id="autoMomentum" style="flex:0.5">🔄 تلقائي 90ث</button>
+    </div>
+    <div class="controls" style="margin-top:8px">
+      <div class="sound-toggle on" id="momSoundToggle">🔔 صوت الزخم</div>
+    </div>
+  </div>
+  <div class="progress-wrap" id="momProgress">
+    <div class="progress-bar"><div class="progress-fill" id="momProgressFill"></div></div>
+    <div class="progress-text" id="momProgressText">جاري الفحص...</div>
+  </div>
+  <div class="status" id="momStatus"></div>
+  <div class="filters-bar" id="momFilters" style="display:none">
+    <div class="filter-chip active" data-min="65">✅ مؤكد +65</div>
+    <div class="filter-chip" data-min="75">💥 +75</div>
+    <div class="filter-chip" data-min="85">💎 +85</div>
+  </div>
+  <div id="momResults"><div class="empty">اضغط "ابدأ المسح" ⚡</div></div>
+</div>
+
+<div id="panel-explode" style="display:none">
+  <div class="single-search-box" style="border-color:#a371f7">
+    <div class="single-search-title" style="color:#a371f7">🚀 كاشف التجميع</div>
+    <div class="controls" style="margin-bottom:8px">
+      <select id="expQuote">
+        <option value="5000000">حجم ≥ $5M</option>
+        <option value="10000000" selected>حجم ≥ $10M ⭐</option>
+        <option value="30000000">حجم ≥ $30M</option>
+      </select>
+      <select id="expTop">
+        <option value="50">أفضل 50</option>
+        <option value="80" selected>أفضل 80</option>
+        <option value="120">أفضل 120</option>
+      </select>
+    </div>
+    <div class="controls">
+      <button class="explode-btn" id="startExplode">🚀 ابدأ الكشف</button>
+    </div>
+  </div>
+  <div class="progress-wrap" id="expProgress">
+    <div class="progress-bar"><div class="progress-fill" id="expProgressFill"></div></div>
+    <div class="progress-text" id="expProgressText">جاري الفحص...</div>
+  </div>
+  <div class="status" id="expStatus"></div>
+  <div class="filters-bar" id="expFilters" style="display:none">
+    <div class="filter-chip active" data-min="65">✅ +65</div>
+    <div class="filter-chip" data-min="75">💥 +75</div>
+    <div class="filter-chip" data-min="85">💎 +85</div>
+  </div>
+  <div id="explodeResults"><div class="empty">اضغط "ابدأ الكشف" 🚀</div></div>
+</div>
+
+<div id="panel-watch" style="display:none">
+  <div class="watch-panel">
+    <div class="watch-header">
+      <div>
+        <div class="watch-title">👁️ قائمة المراقبة <span id="wsStatus" class="ws-status disconnected"></span></div>
+        <div class="watch-sub">🔴 سعر حي • 🎯 تنبيه إغلاق شمعة 1س</div>
+      </div>
+    </div>
+    <div class="watch-controls">
+      <button class="breakout-btn" id="startWatch">▶️ ابدأ المراقبة</button>
+      <button class="analyze-btn" id="stopWatch">⏹️ إيقاف</button>
+      <button onclick="clearBroken()" style="background:#21262d;color:#e6edf3;border-color:#30363d;flex:1;min-width:100px">🧹 مسح</button>
+    </div>
+    <div class="countdown-box" id="watchCountdown" style="display:none">
+      آخر فحص: <b id="lastCheckTime">—</b> • القادم بعد <b id="nextCheckSec">30</b>ث
+    </div>
+  </div>
+  <div id="watchList"><div class="empty">لا عملات</div></div>
+</div>
+
+<div id="panel-journal" style="display:none">
+  <div class="calc-panel">
+    <div class="journal-title">💰 حاسبة حجم الصفقة</div>
+    <div class="jgrid">
+      <div><label>رأس المال ($)</label><input id="calcCapital" type="number" value="500" step="any"></div>
+      <div><label>نسبة الصفقة (%)</label><input id="calcPercent" type="number" value="1" step="0.5" max="3"></div>
+    </div>
+    <div class="calc-result-box">
+      <div class="calc-result-label">حجم الصفقة:</div>
+      <div class="calc-result-value" id="calcResult">$5.00</div>
+      <div class="calc-result-hint">⚠️ لا تتجاوز 3%</div>
+    </div>
+  </div>
+  <div class="journal-form">
+    <div class="journal-title">➕ إضافة صفقة</div>
+    <div class="jgrid">
+      <div><label>العملة</label><input id="jSymbol" placeholder="SOL" style="text-transform:uppercase"></div>
+      <div><label>النقاط</label><input id="jScore" type="number" placeholder="75" min="0" max="100"></div>
+    </div>
+    <div class="jgrid">
+      <div><label>سعر الدخول ($)</label><input id="jEntry" type="number" step="any" placeholder="150.25"></div>
+      <div><label>الكمية ($)</label><input id="jAmount" type="number" step="any" value="5"></div>
+    </div>
+    <div class="jgrid">
+      <div><label>🎯 الهدف</label><input id="jTarget" type="number" step="any" placeholder="158"></div>
+      <div><label>🛑 الوقف</label><input id="jStop" type="number" step="any" placeholder="145"></div>
+    </div>
+    <div class="jbtn-row">
+      <button class="analyze-btn" id="jAddBtn">💾 إضافة</button>
+      <button style="background:#21262d;color:#e6edf3;border-color:#30363d" id="jClearBtn">🔄 تفريغ</button>
+    </div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-box"><div class="stat-box-val" id="jTotal">0</div><div class="stat-box-lbl">إجمالي</div></div>
+    <div class="stat-box"><div class="stat-box-val win" id="jWinRate">0%</div><div class="stat-box-lbl">نسبة النجاح</div></div>
+    <div class="stat-box"><div class="stat-box-val win" id="jWins">0</div><div class="stat-box-lbl">رابحة</div></div>
+    <div class="stat-box"><div class="stat-box-val loss" id="jLosses">0</div><div class="stat-box-lbl">خاسرة</div></div>
+    <div class="stat-box"><div class="stat-box-val gold" id="jAvgWin">+0%</div><div class="stat-box-lbl">متوسط ربح</div></div>
+    <div class="stat-box"><div class="stat-box-val loss" id="jAvgLoss">0%</div><div class="stat-box-lbl">متوسط خسارة</div></div>
+  </div>
+  <div class="pnl-big zero" id="jPnl">💰 الصافي: $0.00</div>
+  <div class="jbtn-row" style="margin-bottom:14px">
+    <button class="history-btn" id="jExportBtn">📥 تصدير Excel</button>
+    <button style="background:#f85149;color:white;border-color:#f85149" id="jClearAllBtn">🗑️ مسح الكل</button>
+  </div>
+  <div class="jfilters" id="jFilters">
+    <button class="filter-chip active" data-filter="all">الكل</button>
+    <button class="filter-chip" data-filter="pending">⏳ معلقة</button>
+    <button class="filter-chip" data-filter="win">✅ رابحة</button>
+    <div class="filter-chip" data-filter="loss">❌ خاسرة</div>
+  </div>
+  <div id="tradeList"><div class="empty">لا صفقات</div></div>
+</div>
+
+<div id="panel-single" style="display:none">
+  <div class="single-search-box">
+    <div class="single-search-title">🔍 ابحث عن عملة</div>
+    <div class="single-search-row">
+      <input id="singleInput" placeholder="BTC" autocomplete="off">
+      <button class="analyze-btn" id="analyzeSingle">تحليل</button>
+    </div>
+    <div class="quick-picks">
+      <div class="quick-pick" data-sym="BTC">BTC</div>
+      <div class="quick-pick" data-sym="ETH">ETH</div>
+      <div class="quick-pick" data-sym="SOL">SOL</div>
+      <div class="quick-pick" data-sym="BNB">BNB</div>
+      <div class="quick-pick" data-sym="XRP">XRP</div>
+      <div class="quick-pick" data-sym="DOGE">DOGE</div>
+      <div class="quick-pick" data-sym="ADA">ADA</div>
+      <div class="quick-pick" data-sym="AVAX">AVAX</div>
+    </div>
+  </div>
+  <div class="status" id="singleStatus"></div>
+  <div id="singleResult"></div>
+</div>
+
+<div id="panel-history" style="display:none">
+  <div class="controls"><button class="history-btn" id="clearHistory">🗑️ مسح السجل</button></div>
+  <div class="history-container" id="historyList"><div class="empty">لا سجل</div></div>
+</div>
+
+<div id="panel-backup" style="display:none">
+  <div class="backup-panel">
+    <div class="journal-title" style="color:#58a6ff">💾 النسخ الاحتياطي</div>
+    <div style="font-size:12px;color:#c9d1d9;line-height:1.7;margin-bottom:12px">
+      احفظ كل بياناتك في ملف.
+    </div>
+    <div class="jbtn-row">
+      <button class="backup-btn" id="backupExport">📤 تصدير</button>
+      <button class="analyze-btn" id="backupImport">📥 استيراد</button>
+    </div>
+    <input type="file" id="backupFile" accept=".json" style="display:none">
+  </div>
+  <div class="stats-grid">
+    <div class="stat-box"><div class="stat-box-val" id="bkWatch">0</div><div class="stat-box-lbl">عملات</div></div>
+    <div class="stat-box"><div class="stat-box-val" id="bkTrades">0</div><div class="stat-box-lbl">صفقات</div></div>
+    <div class="stat-box"><div class="stat-box-val gold" id="bkHistory">0</div><div class="stat-box-lbl">سجل</div></div>
+    <div class="stat-box"><div class="stat-box-val" id="bkSize">0 KB</div><div class="stat-box-lbl">حجم</div></div>
+  </div>
+</div>
+
+<button class="note-fab" id="openModal">ℹ️</button>
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">ℹ️ v6.5 — الميزات الجديدة</div>
+      <button class="modal-close" id="closeModal">✕</button>
+    </div>
+    <div class="modal-section">
+      <h3>📒 السعر الحي في الدفتر (جديد)</h3>
+      <p>كل صفقة معلقة في الدفتر تعرض <b>السعر الحي</b> + <b>P&L لحظي</b> يتحدث كل ثانية.</p>
+      <ul>
+        <li>🔴 السعر الحي: يتحدث من WebSocket</li>
+        <li>📊 P&L لحظي: حساب الربح/الخسارة الفوري</li>
+        <li>🎨 اللون: أخضر للربح، أحمر للخسارة</li>
+      </ul>
+    </div>
+    <div class="modal-section">
+      <h3>🎯 تنبيه إغلاق شمعة 1س</h3>
+      <p>التنبيه يجيك عند إغلاق شمعة الساعة إذا السعر فوق الاختراق.</p>
+    </div>
+    <div class="info-box">
+      <div class="title">💡 الفائدة</div>
+      <p>تتابع صفقاتك المفتوحة بشكل لحظي — تعرف متى تقترب من الهدف أو الوقف.</p>
+    </div>
+    <div class="warning-box">
+      <div class="title">⚠️ تحذير</div>
+      <p>أداة تعليمية. لا نصيحة استثمارية.</p>
+    </div>
+    <div class="signature">صُنع بـ ❤️ لمجتمع التداول العربي</div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<footer>Powered by Binance • v6.5 — سعر حي في الدفتر</footer>
+<script>
+/* ====================== API ====================== */
+const API_BASE = 'https://api.binance.com';
+const API_FALLBACK = 'https://data-api.binance.vision';
+
+async function api(path, params) {
+  const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+  try {
+    const r = await fetch(API_BASE + path + qs);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } catch(e) {
+    const r2 = await fetch(API_FALLBACK + path + qs);
+    if (!r2.ok) throw new Error('HTTP ' + r2.status);
+    return await r2.json();
+  }
+}
+
+const BAD_TOKENS = [
+  'USDC','BUSD','TUSD','DAI','FDUSD','USDP','USDD','USTC','AEUR',
+  'RLUSD','PYUSD','USDE','USD1','USDX','USDB','SUSD','GUSD','LUSD','FRAX',
+  'USDT0','USDY','USDF','DOLA','MIM','ALUSD','CUSD','XAUT','PAXG',
+  'EUR','GBP','TRY','BRL','ARS','JPY','RUB','ZAR','UAH','NGN',
+  'IDRT','BIDR','VAI','BVND','USDS','BSCUSD','EURT','EURS','USDJ','UST'
+];
+
+function filterTickers(all, minVol, topN) {
+  return all
+    .filter(t => t.symbol.endsWith('USDT'))
+    .filter(t => !BAD_TOKENS.some(b => t.symbol.startsWith(b)))
+    .filter(t => !/(UP|DOWN|BULL|BEAR)USDT$/.test(t.symbol))
+    .filter(t => +t.quoteVolume >= minVol)
+    .filter(t => {
+      const p = +t.lastPrice;
+      if (p > 0.98 && p < 1.02) return false;
+      return true;
+    })
+    .sort((a,b) => +b.quoteVolume - +a.quoteVolume)
+    .slice(0, topN);
+}
+
+/* ====================== INDICATORS ====================== */
+function calcRSI(closes, period) {
+  period = period || 14;
+  if (closes.length < period + 1) return 50;
+  let g = 0, l = 0;
+  for (let i = 1; i <= period; i++) {
+    const d = closes[i] - closes[i-1];
+    if (d >= 0) g += d; else l -= d;
+  }
+  let ag = g / period, al = l / period;
+  for (let i = period + 1; i < closes.length; i++) {
+    const d = closes[i] - closes[i-1];
+    ag = (ag * (period - 1) + Math.max(d, 0)) / period;
+    al = (al * (period - 1) + Math.max(-d, 0)) / period;
+  }
+  if (al === 0) return 100;
+  return 100 - 100 / (1 + ag / al);
+}
+function calcEMA(v, p) {
+  if (v.length < p) return v[v.length-1];
+  const k = 2 / (p + 1);
+  let prev = v.slice(0, p).reduce((a,b)=>a+b,0) / p;
+  for (let i = p; i < v.length; i++) prev = v[i] * k + prev * (1 - k);
+  return prev;
+}
+function stdDev(v) {
+  const m = v.reduce((a,b)=>a+b,0) / v.length;
+  return Math.sqrt(v.reduce((a,b)=>a + (b-m)*(b-m), 0) / v.length);
+}
+
+/* ====================== WEBSOCKET لحظي ====================== */
+let priceWS = null;
+let liveePrices = {};
+let wsConnected = false;
+let liveUpdateQueue = {};
+let liveUpdateTimer = null;
+
+function updateWSStatus() {
+  const el1 = document.getElementById('wsStatus');
+  const el2 = document.getElementById('wsStatusMomentum');
+  const cls = wsConnected ? 'ws-status connected' : 'ws-status disconnected';
+  if (el1) el1.className = cls;
+  if (el2) el2.className = cls;
+}
+
+function connectPriceWebSocket() {
+  if (priceWS && priceWS.readyState === WebSocket.OPEN) return;
+  if (priceWS && priceWS.readyState === WebSocket.CONNECTING) return;
+
+  try {
+    priceWS = new WebSocket('wss://fstream.binance.com/ws/!markPrice@arr@1s');
+  } catch(e) {
+    console.warn('WebSocket failed:', e);
+    setTimeout(connectPriceWebSocket, 5000);
+    return;
+  }
+
+  priceWS.onopen = () => {
+    console.log('✅ WebSocket connected');
+    wsConnected = true;
+    updateWSStatus();
+  };
+
+  priceWS.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      const arr = Array.isArray(data) ? data : [data];
+      arr.forEach(item => {
+        if (item.s) {
+          liveePrices[item.s] = +item.p;
+          liveUpdateQueue[item.s] = +item.p;
+        }
+      });
+      scheduleApplyLive();
+    } catch(e) {}
+  };
+
+  priceWS.onclose = () => {
+    console.log('⚠️ WebSocket closed — reconnecting');
+    wsConnected = false;
+    updateWSStatus();
+    priceWS = null;
+    setTimeout(connectPriceWebSocket, 3000);
+  };
+
+  priceWS.onerror = () => {
+    wsConnected = false;
+    updateWSStatus();
+  };
+}
+
+function scheduleApplyLive() {
+  if (liveUpdateTimer) return;
+  liveUpdateTimer = requestAnimationFrame(() => {
+    applyLivePrices();
+    applyLiveToJournal();
+    liveUpdateTimer = null;
+  });
+}
+
+/* ✅ تطبيق الأسعار على المراقبة */
+function applyLivePrices() {
+  document.querySelectorAll('.watch-item[data-symbol]').forEach(item => {
+    const sym = item.dataset.symbol;
+    const liveP = liveUpdateQueue[sym];
+    if (!liveP) return;
+    const w = watchList.find(x => x.symbol === sym);
+    if (!w) return;
+    const prev = w._prevLivePrice || w.entry;
+    w.lastPrice = liveP;
+
+    const priceEl = item.querySelector('.live-price');
+    if (priceEl) {
+      priceEl.textContent = '$' + fmtPrice(liveP);
+      if (liveP > prev) priceEl.style.color = '#3fb950';
+      else if (liveP < prev) priceEl.style.color = '#f85149';
+      else priceEl.style.color = '#f0b90b';
+    }
+    const pnlEl = item.querySelector('.live-pnl');
+    if (pnlEl) {
+      const pp = ((liveP - w.entry) / w.entry) * 100;
+      pnlEl.textContent = (pp >= 0 ? '+' : '') + pp.toFixed(2) + '%';
+      pnlEl.className = 'live-pnl ' + (pp > 0 ? 'up' : pp < 0 ? 'down' : '');
+    }
+    w._prevLivePrice = liveP;
+    checkBreakoutLive(w, liveP);
+    checkClosedCandle(w);
+  });
+}
+
+/* ✅ تطبيق الأسعار على الدفتر (جديد v6.5) */
+function applyLiveToJournal() {
+  document.querySelectorAll('.trade-item[data-symbol]').forEach(item => {
+    const sym = item.dataset.symbol;
+    const liveP = liveePrices[sym];
+    if (!liveP) return;
+
+    /* السعر الحي */
+    const priceEl = item.querySelector('.trade-live-price');
+    if (priceEl) {
+      const prev = parseFloat(priceEl.dataset.prev || '0');
+      priceEl.textContent = '$' + fmtPrice(liveP);
+      if (prev && liveP > prev) priceEl.style.color = '#3fb950';
+      else if (prev && liveP < prev) priceEl.style.color = '#f85149';
+      else priceEl.style.color = '#58a6ff';
+      priceEl.dataset.prev = liveP;
+    }
+
+    /* P&L لحظي */
+    const pnlEl = item.querySelector('.trade-live-pnl');
+    if (pnlEl) {
+      const entry = parseFloat(pnlEl.dataset.entry || '0');
+      const amount = parseFloat(pnlEl.dataset.amount || '0');
+      if (entry && amount) {
+        const pnlPct = ((liveP - entry) / entry) * 100;
+        const pnl = amount * (pnlPct / 100);
+        pnlEl.textContent = (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '% (' + (pnl >= 0 ? '+' : '') + '$' + Math.abs(pnl).toFixed(2) + ')';
+        pnlEl.className = 'd-val trade-live-pnl ' + (pnlPct > 0 ? 'up' : pnlPct < 0 ? 'down' : '');
+      }
+    }
+  });
+}
+
+/* ====================== فحص الاختراق اللحظي ====================== */
+function checkBreakoutLive(w, p) {
+  if (w.status !== 'watching') {
+    if (w.status === 'broken' && w.brokeAt) {
+      const dropFromBreak = ((w.breakoutTrigger - p) / w.breakoutTrigger) * 100;
+      if (dropFromBreak >= 1) {
+        w.status = 'failed';
+        w._candleChecked = true;
+        showToast('loss', '❌ اختراق وهمي', w.name, `نزل ${dropFromBreak.toFixed(2)}% تحت الاختراق`);
+        saveWatch();
+        setTimeout(renderWatchList, 100);
+      }
+    }
+    return;
+  }
+  
+  if (p >= w.breakoutTrigger) {
+    w.status = 'broken';
+    w.brokeAt = Date.now();
+    w._candleChecked = false;
+    showToast('breakout', '⏳ اخترق — انتظر إغلاق الشمعة', w.name, `السعر: $${fmtPrice(p)}`);
+    playMomentumSound();
+    saveWatch();
+    setTimeout(renderWatchList, 100);
+  }
+  else if (p <= w.stopTrigger) {
+    w.status = 'failed';
+    showToast('loss', '❌ فشلت الإشارة', w.name, `كسر $${fmtPrice(p)}`);
+    saveWatch();
+    setTimeout(renderWatchList, 100);
+  }
+}
+
+/* ====================== ✅ كشف إغلاق شمعة 1س ====================== */
+function getCurrentHourStart() {
+  const now = new Date();
+  now.setMinutes(0, 0, 0);
+  return now.getTime();
+}
+
+async function checkClosedCandle(w) {
+  if (w.status !== 'broken') return;
+  if (!w.brokeAt) return;
+  if (w._candleChecked) return;
+  
+  const currentHourStart = getCurrentHourStart();
+  if (currentHourStart <= w.brokeAt) return;
+  if (w._lastCheckedClose === currentHourStart) return;
+  w._lastCheckedClose = currentHourStart;
+  w._candleChecked = true;
+  
+  try {
+    const kl = await api('/api/v3/klines', { symbol: w.symbol, interval: '1h', limit: 2 });
+    if (!kl || kl.length < 2) {
+      w._candleChecked = false;
+      return;
+    }
+    
+    const closedCandle = kl[0];
+    const closedClose = +closedCandle[4];
+    
+    if (closedClose >= w.breakoutTrigger) {
+      w.status = 'confirmed';
+      w.confirmedAt = Date.now();
+      w.confirmedPrice = closedClose;
+      
+      showToast('confirmed', 
+        '🎯 شمعة 1س أغلقت فوق الاختراق — ادخل الآن', 
+        w.name, 
+        `إغلاق: $${fmtPrice(closedClose)} | الاختراق: $${fmtPrice(w.breakoutTrigger)}`);
+      playBreakoutSound();
+      playCashSound();
+      sendBrowserNotif('🎯 إشارة مؤكدة: ' + w.name, 
+        `شمعة 1س أغلقت فوق $${fmtPrice(w.breakoutTrigger)} — ادخل الآن`,
+        'confirmed-' + w.symbol);
+      saveWatch();
+      setTimeout(renderWatchList, 100);
+    }
+    else {
+      w.status = 'failed';
+      w.failedReason = 'شمعة 1س أغلقت تحت الاختراق';
+      showToast('loss', '❌ اختراق وهمي', w.name, 
+        `شمعة 1س أغلقت عند $${fmtPrice(closedClose)} تحت الاختراق`);
+      saveWatch();
+      setTimeout(renderWatchList, 100);
+    }
+  } catch(e) {
+    console.warn('checkClosedCandle error:', e);
+    w._candleChecked = false;
+  }
+}
+
+/* ====================== ⏰ عدّاد الوقت حتى الإغلاق ====================== */
+function getTimeUntilClose(brokeAt) {
+  const now = new Date();
+  const nextHour = new Date(now);
+  nextHour.setHours(now.getHours() + 1, 0, 0, 0);
+  const remaining = nextHour.getTime() - now.getTime();
+  if (remaining <= 0) return '⏰ تُغلق الآن';
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+setInterval(() => {
+  document.querySelectorAll('.watch-item[data-symbol]').forEach(item => {
+    const sym = item.dataset.symbol;
+    const w = watchList.find(x => x.symbol === sym);
+    if (!w || w.status !== 'broken') return;
+    const timeEl = item.querySelector('.candle-time-remaining');
+    if (timeEl) timeEl.textContent = getTimeUntilClose(w.brokeAt);
+  });
+}, 1000);
+
+/* ====================== حجم الشارت + الخط ====================== */
+let chartSize = 240;
+let priceFontSize = 22;
+
+function changeChartSize(delta) {
+  chartSize = Math.max(150, Math.min(500, chartSize + delta));
+  document.querySelectorAll('.mini-chart').forEach(c => {
+    c.style.height = chartSize + 'px';
+  });
+  localStorage.setItem('chart_size', chartSize.toString());
+  setTimeout(() => { updateAllCharts(); }, 80);
+}
+
+function changeFontSize(delta) {
+  priceFontSize = Math.max(14, Math.min(42, priceFontSize + delta));
+  applyFontSize();
+  localStorage.setItem('price_font_size', priceFontSize.toString());
+}
+
+function applyFontSize() {
+  document.querySelectorAll('.entry-card-price').forEach(el => {
+    el.style.fontSize = priceFontSize + 'px';
+  });
+  document.querySelectorAll('.level-mini-val').forEach(el => {
+    el.style.fontSize = Math.max(10, Math.round(priceFontSize * 0.55)) + 'px';
+  });
+  document.querySelectorAll('.live-price').forEach(el => {
+    el.style.fontSize = Math.max(12, Math.round(priceFontSize * 0.7)) + 'px';
+  });
+}
+
+function loadChartSize() {
+  const saved = localStorage.getItem('chart_size');
+  if (saved) chartSize = +saved;
+  document.querySelectorAll('.mini-chart').forEach(c => {
+    c.style.height = chartSize + 'px';
+  });
+}
+
+function loadFontSize() {
+  const saved = localStorage.getItem('price_font_size');
+  if (saved) priceFontSize = +saved;
+}
+
+/* ====================== BTC FILTER ====================== */
+let btcChange1h = 0;
+let btcChange24h = 0;
+async function updateBTCStatus() {
+  try {
+    const [ticker, kl] = await Promise.all([
+      api('/api/v3/ticker/24hr', { symbol: 'BTCUSDT' }),
+      api('/api/v3/klines', { symbol: 'BTCUSDT', interval: '1h', limit: 2 })
+    ]);
+    btcChange24h = +ticker.priceChangePercent;
+    const closes = kl.map(k => +k[4]);
+    if (closes.length >= 2) {
+      btcChange1h = ((closes[1] - closes[0]) / closes[0]) * 100;
+    }
+  } catch(e) {}
+}
+function isBTCPumping() {
+  return btcChange1h > -1 && btcChange24h > -3;
+}
+
+/* ====================== MOMENTUM SCORE ====================== */
+function momentumScore(kl5m, kl15m, kl1h, ticker) {
+  const n = kl5m.length;
+  if (n < 50 || !kl15m || kl15m.length < 30) return null;
+
+  const closes = kl5m.map(k => +k[4]);
+  const opens = kl5m.map(k => +k[1]);
+  const highs = kl5m.map(k => +k[2]);
+  const lows = kl5m.map(k => +k[3]);
+  const vols = kl5m.map(k => +k[5]);
+  const takerBuy = kl5m.map(k => +k[9]);
+  const price = closes[n-1];
+  const change24 = +ticker.priceChangePercent;
+  const quoteVol = +ticker.quoteVolume;
+
+  if (change24 > 25) return null;
+  if (change24 < -10) return null;
+
+  const change1h = ((price - closes[n-12]) / closes[n-12]) * 100;
+  if (change1h > 8) return null;
+
+  const priorVol = vols.slice(-48, -3).reduce((a,b)=>a+b,0) / 45;
+  const recentVol = (vols[n-1] + vols[n-2] + vols[n-3]) / 3;
+  const volRatio = recentVol / (priorVol || 1);
+  if (volRatio < 1.5) return null;
+
+  const h12h = Math.max(...highs.slice(-144));
+  const distToHigh = (h12h - price) / price;
+  if (distToHigh > 0.002) return null;
+
+  const rsiNow = calcRSI(closes, 14);
+  const rsiPrev = calcRSI(closes.slice(0, -3), 14);
+  if (rsiNow > 80) return null;
+
+  const lastCandle = kl5m[n-1];
+  const lastBody = Math.abs(+lastCandle[4] - +lastCandle[1]);
+  const lastRange = +lastCandle[2] - +lastCandle[3];
+  const bodyRatio = lastRange > 0 ? lastBody / lastRange : 0;
+  const isGreen = +lastCandle[4] > +lastCandle[1];
+  if (!isGreen) return null;
+
+  if (!isBTCPumping()) return null;
+
+  let score = 0;
+  const reasons = [];
+
+  if (volRatio >= 2.5) { score += 25; reasons.push({t:`🔥🔥 حجم ×${volRatio.toFixed(1)}`, c:'hot'}); }
+  else if (volRatio >= 2) { score += 20; reasons.push({t:`🔥 حجم ×${volRatio.toFixed(1)}`, c:'hot'}); }
+  else { score += 10; reasons.push({t:`حجم ×${volRatio.toFixed(1)}`, c:'gold'}); }
+
+  if (bodyRatio >= 0.6) { score += 15; reasons.push({t:'💚 شمعة خضراء قوية', c:'confirm'}); }
+  else if (bodyRatio >= 0.4) { score += 8; reasons.push({t:'💚 شمعة خضراء', c:'bull'}); }
+
+  if (rsiNow > 55 && rsiNow < 70 && rsiNow > rsiPrev) {
+    score += 20; reasons.push({t:`📈 RSI ${rsiPrev.toFixed(0)}→${rsiNow.toFixed(0)}`, c:'hot'});
+  } else if (rsiNow > 50 && rsiNow < 75) {
+    score += 12; reasons.push({t:`RSI ${rsiNow.toFixed(0)}`, c:'gold'});
+  } else if (rsiNow >= 75) {
+    score += 3; reasons.push({t:`⚠️ RSI ${rsiNow.toFixed(0)}`, c:'hot'});
+  }
+
+  const last3 = kl5m.slice(-3);
+  const greens = last3.filter(k => +k[4] > +k[1]).length;
+  if (greens === 3) { score += 15; reasons.push({t:'💚 3 شمعات خضراء', c:'confirm'}); }
+  else if (greens === 2) { score += 8; reasons.push({t:'💚 شمعتان خضراء', c:'bull'}); }
+
+  if (price >= h12h * 0.999) {
+    score += 20; reasons.push({t:'🚀 اخترق قمة 12س', c:'confirm'});
+  } else if (distToHigh < 0.001) {
+    score += 18; reasons.push({t:'🎯 عند الاختراق', c:'confirm'});
+  } else if (distToHigh < 0.002) {
+    score += 15; reasons.push({t:'🎯 على وشك اختراق', c:'hot'});
+  }
+
+  const closes15 = kl15m.map(k => +k[4]);
+  const ema20_15 = calcEMA(closes15.slice(-50), 20);
+  const ema50_15 = calcEMA(closes15.slice(-80), 50);
+  if (price > ema20_15 && ema20_15 > ema50_15) {
+    score += 10; reasons.push({t:'📊 EMA صاعدة', c:'bull'});
+  }
+
+  const tBuy = takerBuy.slice(-3).reduce((a,b)=>a+b,0);
+  const tVol = vols.slice(-3).reduce((a,b)=>a+b,0);
+  const buyRatio = tBuy / (tVol || 1);
+  if (buyRatio > 0.6) { score += 10; reasons.push({t:`💪 شراء ${(buyRatio*100).toFixed(0)}%`, c:'hot'}); }
+  else if (buyRatio > 0.52) { score += 5; reasons.push({t:`شراء ${(buyRatio*100).toFixed(0)}%`, c:'bull'}); }
+
+  reasons.push({t:`₿ BTC ${btcChange1h >= 0 ? '+' : ''}${btcChange1h.toFixed(2)}%`, c:btcChange1h > 0 ? 'bull' : 'gold'});
+
+  score = Math.max(0, Math.min(100, score));
+
+  let atrSum = 0;
+  for (let i = n - 14; i < n; i++) {
+    atrSum += Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i-1]), Math.abs(lows[i] - closes[i-1]));
+  }
+  const atr = atrSum / 14;
+
+  const breakoutLevel = h12h * 1.001;
+  const entry = Math.max(price, breakoutLevel);
+  const stop = entry - atr * 1.5;
+  const target = entry + atr * 4.5;
+
+  return {
+    score, reasons, rsi: rsiNow, volRatio, buyRatio,
+    change24, change1h, quoteVol24: quoteVol,
+    entry, target, stop,
+    breakoutLevel,
+    rangeHigh12h: h12h,
+    currentPrice: price,
+    confirmed: true,
+    bodyRatio,
+    distToHigh
+  };
+}
+
+/* ====================== EXPLOSION SCORE ====================== */
+function explosionScore(kl1h, kl4h, ticker) {
+  const n = kl1h.length;
+  if (n < 100 || !kl4h || kl4h.length < 60) return null;
+  const closes = kl1h.map(k => +k[4]);
+  const opens = kl1h.map(k => +k[1]);
+  const highs = kl1h.map(k => +k[2]);
+  const lows = kl1h.map(k => +k[3]);
+  const vols = kl1h.map(k => +k[5]);
+  const takerBuy = kl1h.map(k => +k[9]);
+  const price = closes[n-1];
+  const change24 = +ticker.priceChangePercent;
+  const quoteVol = +ticker.quoteVolume;
+  const closes4h = kl4h.map(k => +k[4]);
+
+  if (change24 > 12) return null;
+  if (change24 < -20) return null;
+  if (kl1h.slice(-8).filter(k => +k[4] < +k[1]).length >= 6) return null;
+
+  const ema50_4h = calcEMA(closes4h, 50);
+  const ema100_4h = closes4h.length >= 100 ? calcEMA(closes4h, 100) : ema50_4h;
+  if (closes4h[closes4h.length-1] < ema50_4h && ema50_4h < ema100_4h) return null;
+
+  if (!isBTCPumping()) return null;
+
+  let score = 0;
+  const reasons = [];
+
+  const recentVol = vols.slice(-6).reduce((a,b)=>a+b,0) / 6;
+  const priorVol = vols.slice(-30,-6).reduce((a,b)=>a+b,0) / 24;
+  const volDry = recentVol / (priorVol || 1);
+
+  if (volDry < 0.5) { score += 20; reasons.push({t:'💧 جفاف حجمي', c:'gold'}); }
+  else if (volDry < 0.7) { score += 14; reasons.push({t:'💧 حجم منخفض', c:'bull'}); }
+  else if (volDry < 0.9) score += 8;
+
+  const s20 = closes4h.slice(-20);
+  const bbW = (stdDev(s20) * 4) / (s20.reduce((a,b)=>a+b,0)/20);
+  if (bbW < 0.04) { score += 20; reasons.push({t:'🎯 ضغط 4h حاد', c:'hot'}); }
+  else if (bbW < 0.07) { score += 14; reasons.push({t:'🎯 ضغط 4h', c:'gold'}); }
+  else if (bbW < 0.12) score += 7;
+
+  const rH = Math.max(...highs.slice(-12)), rL = Math.min(...lows.slice(-12));
+  const tight = (rH - rL) / price;
+  if (tight < 0.04) { score += 15; reasons.push({t:'📦 نطاق ضيق جداً', c:'hot'}); }
+  else if (tight < 0.08) { score += 10; reasons.push({t:'📦 نطاق ضيق', c:'gold'}); }
+  else if (tight < 0.12) score += 5;
+
+  let hl = 0;
+  for (let i = n-20; i < n-2; i++) {
+    if (lows[i+2] > lows[i+1] && lows[i+1] > lows[i]) hl++;
+  }
+  if (hl >= 4) { score += 15; reasons.push({t:'🔼 قيعان صاعدة', c:'hot'}); }
+  else if (hl >= 2) { score += 8; reasons.push({t:'🔼 قيعان صاعدة', c:'bull'}); }
+
+  const rsiN = calcRSI(closes, 14);
+  const rsiP = calcRSI(closes.slice(0, -4), 14);
+  if (rsiN > 40 && rsiN < 58 && rsiN > rsiP) { score += 15; reasons.push({t:`📈 RSI صاعد ${rsiN.toFixed(0)}`, c:'gold'}); }
+  else if (rsiN > 38 && rsiN < 62) { score += 7; reasons.push({t:`RSI ${rsiN.toFixed(0)}`, c:'bull'}); }
+
+  let wicks = 0;
+  for (let i = n-5; i < n; i++) {
+    const body = Math.abs(closes[i] - opens[i]) || 1e-12;
+    if (Math.min(closes[i], opens[i]) - lows[i] > body * 1.5) wicks++;
+  }
+  if (wicks >= 2) { score += 10; reasons.push({t:'⚓ رفض الهبوط', c:'gold'}); }
+  else if (wicks === 1) score += 5;
+
+  const h50 = Math.max(...highs.slice(-50)), l50 = Math.min(...lows.slice(-50));
+  const pos = (price - l50) / ((h50 - l50) || 1);
+  if (pos > 0.15 && pos < 0.45) { score += 5; reasons.push({t:'📍 منطقة دخول', c:'bull'}); }
+
+  if (change24 > 8) { score -= 10; reasons.push({t:`⚠️ ارتفع ${change24.toFixed(0)}%`, c:'hot'}); }
+  else if (change24 > 5) score -= 5;
+
+  score = Math.max(0, Math.min(100, score));
+
+  let atrSum = 0;
+  for (let i = n-14; i < n; i++) {
+    atrSum += Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i-1]), Math.abs(lows[i] - closes[i-1]));
+  }
+  const atr = atrSum / 14;
+  const tBuy = takerBuy.slice(-5).reduce((a,b)=>a+b,0);
+  const tVol = vols.slice(-5).reduce((a,b)=>a+b,0);
+
+  const breakoutTrigger = rH * 1.003;
+  const stopTrigger = breakoutTrigger - atr * 1.5;
+  const target = breakoutTrigger + atr * 4.5;
+
+  return {
+    score, reasons, rsi: rsiN,
+    volRatio: volDry, bbWidth: bbW, buyRatio: tBuy / (tVol || 1), rangePos: pos,
+    change24, quoteVol24: quoteVol,
+    entry: breakoutTrigger, target, stop: stopTrigger,
+    rangeHigh12h: rH, rangeLow12h: rL,
+    breakoutTrigger, stopTrigger,
+    currentPrice: price,
+    confirmed: false
+  };
+}
+
+/* ====================== UTILS ====================== */
+function fmtPrice(p) {
+  if (p >= 1000) return p.toFixed(2);
+  if (p >= 1) return p.toFixed(4);
+  if (p >= 0.01) return p.toFixed(5);
+  if (p >= 0.0001) return p.toFixed(6);
+  return p.toExponential(3);
+}
+function fmtVol(v) {
+  if (v >= 1e9) return (v/1e9).toFixed(2) + 'B';
+  if (v >= 1e6) return (v/1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(2) + 'K';
+  return v.toFixed(0);
+}
+function fmtPct(p) { const v = +p; return (v >= 0 ? '+' : '') + v.toFixed(2) + '%'; }
+function fmtMoney(n) { const v = +n; return (v >= 0 ? '$' : '-$') + Math.abs(v).toFixed(2); }
+function scoreClass(s) { return s >= 65 ? 'high' : s >= 45 ? 'mid' : 'low'; }
+function scoreLabel(s) {
+  if (s >= 80) return '💎 مؤكد قوي';
+  if (s >= 65) return '✅ مؤكد';
+  if (s >= 50) return '⚡ متوسط';
+  return '📊 مراقبة';
+}
+function timeAgo(ts) {
+  const d = Date.now() - ts;
+  if (d < 60000) return 'الآن';
+  if (d < 3600000) return Math.floor(d / 60000) + 'د';
+  return Math.floor(d / 3600000) + 'س';
+}
+function fmtDateTime(ts) {
+  return new Date(ts).toLocaleString('ar-EG', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+function calcProperTarget(entry, stop) {
+  const risk = entry - stop;
+  if (risk <= 0) return entry * 1.05;
+  return entry + (risk * 2);
+}
+
+/* ====================== SOUND ====================== */
+let soundEnabled = true, notifEnabled = true, audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; } }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playAlertSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioCtx(); if (!ctx) return;
+  [523.25, 659.25, 783.99].forEach((f, i) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    const t = ctx.currentTime + i * 0.15;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.35, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + 0.45);
+  });
+}
+function playMomentumSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioCtx(); if (!ctx) return;
+  [880, 1108.73, 1318.51, 1760, 2093.25].forEach((f, i) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sawtooth'; o.frequency.value = f;
+    const t = ctx.currentTime + i * 0.08;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.25, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + 0.3);
+  });
+}
+function playBreakoutSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioCtx(); if (!ctx) return;
+  [659.25, 783.99, 987.77, 1318.51].forEach((f, i) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'triangle'; o.frequency.value = f;
+    const t = ctx.currentTime + i * 0.12;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.4, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + 0.55);
+  });
+}
+function playSuccessSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioCtx(); if (!ctx) return;
+  [1318.51, 1760].forEach((f, i) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'triangle'; o.frequency.value = f;
+    const t = ctx.currentTime + i * 0.12;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.25, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + 0.35);
+  });
+}
+function playCashSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioCtx(); if (!ctx) return;
+  [1046.5, 1318.51, 1567.98].forEach((f, i) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    const t = ctx.currentTime + i * 0.1;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.35, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + 0.45);
+  });
+}
+
+/* ====================== TOASTS ====================== */
+function showToast(type, title, symbol, extra) {
+  const cont = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  const em = { momentum: '⚡', breakout: '⏳', signal: '🚀', win: '💰', loss: '❌', confirmed: '🎯' };
+  el.innerHTML = `
+    <div class="toast-emoji">${em[type] || '📢'}</div>
+    <div class="toast-body">
+      <div class="toast-title">${title}</div>
+      <div class="toast-symbol">${symbol}</div>
+      ${extra ? `<div class="toast-score">${extra}</div>` : ''}
+    </div>
+  `;
+  el.onclick = () => el.remove();
+  cont.appendChild(el);
+  setTimeout(() => el.remove(), 8000);
+}
+function sendBrowserNotif(title, body, tag) {
+  if (!notifEnabled) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try { new Notification(title, { body, tag: tag || 'default' }); } catch(e) {}
+}
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+}
+
+/* ====================== JOURNAL ====================== */
+const TRADES_KEY = 'binance_trades_v65';
+let trades = [];
+let journalFilter = 'all';
+function loadTrades() { try { trades = JSON.parse(localStorage.getItem(TRADES_KEY) || '[]'); } catch(e) { trades = []; } }
+function saveTrades() { localStorage.setItem(TRADES_KEY, JSON.stringify(trades)); updateJournalBadge(); }
+function addTrade(t) {
+  trades.unshift({
+    id: Date.now(), symbol: t.symbol, score: t.score || 0,
+    entry: t.entry, amount: t.amount, target: t.target, stop: t.stop,
+    exit: null, result: 'pending', pnl: 0, pnlPct: 0,
+    date: Date.now(), closeDate: null, fromWatch: t.fromWatch || false
+  });
+  saveTrades(); renderTrades();
+}
+function closeTradeAuto(id, exitPrice) {
+  const t = trades.find(x => x.id === id);
+  if (!t || t.result !== 'pending') return;
+  const pnlPct = ((exitPrice - t.entry) / t.entry) * 100;
+  const pnl = t.amount * (pnlPct / 100);
+  t.exit = exitPrice; t.pnl = pnl; t.pnlPct = pnlPct;
+  t.result = pnl > 0 ? 'win' : pnl < 0 ? 'loss' : 'win';
+  t.closeDate = Date.now();
+  saveTrades(); renderTrades();
+  if (pnl > 0) {
+    showToast('win', '💰 ربح!', t.symbol.replace('USDT',''), `${fmtMoney(pnl)} (+${pnlPct.toFixed(2)}%)`);
+    sendBrowserNotif('💰 ' + t.symbol.replace('USDT',''), `+${pnlPct.toFixed(2)}%`, 'win-' + t.id);
+    playCashSound();
+  } else {
+    showToast('loss', '❌ وقف', t.symbol.replace('USDT',''), `${fmtMoney(pnl)} (${pnlPct.toFixed(2)}%)`);
+    sendBrowserNotif('❌ ' + t.symbol.replace('USDT',''), `${pnlPct.toFixed(2)}%`, 'loss-' + t.id);
+    playAlertSound();
+  }
+}
+function closeTradeManual(id) {
+  const t = trades.find(x => x.id === id);
+  if (!t || t.result !== 'pending') return;
+  const s = prompt(`سعر إغلاق ${t.symbol.replace('USDT','')}\n\nالدخول: $${fmtPrice(t.entry)}`);
+  if (s === null) return;
+  const e = parseFloat(s);
+  if (!e || e <= 0) return alert('سعر غير صحيح');
+  closeTradeAuto(id, e);
+}
+function deleteTrade(id) {
+  if (!confirm('حذف الصفقة؟')) return;
+  trades = trades.filter(t => t.id !== id);
+  saveTrades(); renderTrades();
+}
+function reopenTrade(id) {
+  const t = trades.find(x => x.id === id);
+  if (!t) return;
+  t.exit = null; t.pnl = 0; t.pnlPct = 0; t.result = 'pending'; t.closeDate = null;
+  saveTrades(); renderTrades();
+}
+function updateJournalStats() {
+  const closed = trades.filter(t => t.result !== 'pending');
+  const wins = closed.filter(t => t.result === 'win');
+  const losses = closed.filter(t => t.result === 'loss');
+  const wr = closed.length ? (wins.length / closed.length) * 100 : 0;
+  const aw = wins.length ? wins.reduce((a, t) => a + t.pnlPct, 0) / wins.length : 0;
+  const al = losses.length ? losses.reduce((a, t) => a + t.pnlPct, 0) / losses.length : 0;
+  const tot = closed.reduce((a, t) => a + t.pnl, 0);
+  document.getElementById('jTotal').textContent = trades.length;
+  document.getElementById('jWinRate').textContent = wr.toFixed(1) + '%';
+  document.getElementById('jWins').textContent = wins.length;
+  document.getElementById('jLosses').textContent = losses.length;
+  document.getElementById('jAvgWin').textContent = (aw >= 0 ? '+' : '') + aw.toFixed(2) + '%';
+  document.getElementById('jAvgLoss').textContent = al.toFixed(2) + '%';
+  const p = document.getElementById('jPnl');
+  p.className = 'pnl-big ' + (tot > 0 ? 'pos' : tot < 0 ? 'neg' : 'zero');
+  p.textContent = `💰 الصافي: ${fmtMoney(tot)}`;
+
+  const oldWarn = document.getElementById('winrateWarning');
+  if (oldWarn) oldWarn.remove();
+  if (closed.length >= 10 && wr < 40) {
+    const warn = document.createElement('div');
+    warn.id = 'winrateWarning';
+    warn.className = 'winrate-warning';
+    warn.innerHTML = `<b>⚠️ نسبة النجاح منخفضة (${wr.toFixed(1)}%)</b><br>
+      تحتاج 40%+ للنظام الناجح.<br>
+      <b>لا تدخل بفلوس حقيقية الآن.</b>`;
+    const list = document.getElementById('tradeList');
+    list.parentElement.insertBefore(warn, list);
+  }
+}
+function updateJournalBadge() {
+  const p = trades.filter(t => t.result === 'pending').length;
+  const tab = document.querySelector('.tab[data-tab="journal"]');
+  if (tab) tab.textContent = p ? `📒 الدفتر (${p})` : '📒 الدفتر';
+}
+function renderTrades() {
+  updateJournalStats(); updateJournalBadge();
+  const box = document.getElementById('tradeList');
+  let list = trades;
+  if (journalFilter !== 'all') list = trades.filter(t => t.result === journalFilter);
+  if (!list.length) { box.innerHTML = '<div class="empty">لا صفقات</div>'; return; }
+  box.innerHTML = list.map(t => {
+    const sym = t.symbol.replace('USDT','');
+    const bc = t.result === 'win' ? 'badge-win' : t.result === 'loss' ? 'badge-loss' : 'badge-pending';
+    const bt = t.result === 'win' ? '✅ رابحة' : t.result === 'loss' ? '❌ خاسرة' : '⏳ معلقة';
+    const pc = t.pnl > 0 ? 'up' : t.pnl < 0 ? 'down' : '';
+    const rr = ((t.target - t.entry) / (t.entry - t.stop)).toFixed(1);
+    
+    /* ✅ السعر الحي للصفقة المعلقة */
+    const liveP = liveePrices[t.symbol] || 0;
+    const livePnlPct = liveP ? ((liveP - t.entry) / t.entry) * 100 : 0;
+    const livePnl = liveP ? t.amount * (livePnlPct / 100) : 0;
+    const livePnlCls = livePnlPct > 0 ? 'up' : livePnlPct < 0 ? 'down' : '';
+    
+    return `
+      <div class="trade-item ${t.result}" data-symbol="${t.symbol}">
+        <div class="trade-header">
+          <div>
+            <span class="trade-symbol">${sym}</span>
+            ${t.score ? `<span class="trade-badge badge-score" style="margin-right:6px">${t.score}/100</span>` : ''}
+            ${t.fromWatch ? '<span class="trade-badge badge-score" style="background:#58a6ff;color:white;margin-right:6px">👁️</span>' : ''}
+          </div>
+          <span class="trade-badge ${bc}">${bt}</span>
+        </div>
+        <div class="trade-details">
+          <div class="d-row"><span class="d-lbl">الدخول:</span><span class="d-val">$${fmtPrice(t.entry)}</span></div>
+          <div class="d-row"><span class="d-lbl">الكمية:</span><span class="d-val">$${t.amount}</span></div>
+          ${t.result === 'pending' ? `
+            <div class="d-row" style="grid-column: 1 / -1;">
+              <span class="d-lbl">🔴 السعر الحي:</span>
+              <span class="trade-live-price" data-prev="0" style="color:#58a6ff;font-weight:bold">${liveP ? '$'+fmtPrice(liveP) : '...'}</span>
+            </div>
+            <div class="d-row" style="grid-column: 1 / -1;">
+              <span class="d-lbl">📊 P&L لحظي:</span>
+              <span class="d-val trade-live-pnl ${livePnlCls}" data-entry="${t.entry}" data-amount="${t.amount}">${liveP ? (livePnlPct >= 0 ? '+' : '') + livePnlPct.toFixed(2) + '% (' + (livePnl >= 0 ? '+' : '') + '$' + Math.abs(livePnl).toFixed(2) + ')' : '...'}</span>
+            </div>
+          ` : ''}
+          <div class="d-row"><span class="d-lbl">🎯 هدف:</span><span class="d-val up">$${fmtPrice(t.target)}</span></div>
+          <div class="d-row"><span class="d-lbl">🛑 وقف:</span><span class="d-val down">$${fmtPrice(t.stop)}</span></div>
+          <div class="d-row"><span class="d-lbl">R:R:</span><span class="d-val">${rr}x</span></div>
+          ${t.exit ? `<div class="d-row"><span class="d-lbl">إغلاق:</span><span class="d-val">$${fmtPrice(t.exit)}</span></div>` : ''}
+          ${t.exit ? `<div class="d-row"><span class="d-lbl">P&L نهائي:</span><span class="d-val ${pc}">${fmtMoney(t.pnl)} (${t.pnlPct >= 0 ? '+' : ''}${t.pnlPct.toFixed(2)}%)</span></div>` : ''}
+        </div>
+        <div class="trade-actions">
+          ${t.result === 'pending' ? `<button class="analyze-btn" onclick="closeTradeManual(${t.id})">✅ إغلاق</button>` : `<button style="background:#21262d;color:#e6edf3;border-color:#30363d" onclick="reopenTrade(${t.id})">↩️ فتح</button>`}
+          <button style="background:#f85149;color:white;border-color:#f85149" onclick="deleteTrade(${t.id})">🗑️</button>
+        </div>
+        <div style="font-size:10px;color:#6e7681;margin-top:6px;text-align:left">${fmtDateTime(t.date)}${t.closeDate ? ' → ' + fmtDateTime(t.closeDate) : ''}</div>
+      </div>
+    `;
+  }).join('');
+}
+function exportTrades() {
+  if (!trades.length) return alert('لا صفقات');
+  const h = ['التاريخ','العملة','النقاط','الدخول','الكمية','الهدف','الوقف','الإغلاق','النتيجة','P&L $','P&L %'];
+  const rows = trades.map(t => [fmtDateTime(t.date), t.symbol, t.score, t.entry, t.amount, t.target, t.stop, t.exit || '',
+    t.result === 'win' ? 'رابحة' : t.result === 'loss' ? 'خاسرة' : 'معلقة', t.pnl.toFixed(2), t.pnlPct.toFixed(2) + '%']);
+  const csv = [h, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'trades_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+}
+
+/* ====================== MINI CHART ====================== */
+const chartCache = new Map();
+async function getChartData(symbol) {
+  const now = Date.now();
+  const cached = chartCache.get(symbol);
+  if (cached && now - cached.lastFetch < 60000) return cached.klines;
+  try {
+    const kl = await api('/api/v3/klines', { symbol, interval: '5m', limit: 144 });
+    chartCache.set(symbol, { klines: kl, lastFetch: now });
+    return kl;
+  } catch(e) { return cached ? cached.klines : null; }
+}
+
+function drawMiniChart(canvas, klines, levels) {
+  if (!canvas || !klines || !klines.length) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth || canvas.parentElement.clientWidth || 300;
+  const h = canvas.clientHeight || chartSize;
+  if (w === 0 || h === 0) return;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  const highs = klines.map(k => +k[2]);
+  const lows = klines.map(k => +k[3]);
+  let maxP = Math.max(...highs);
+  let minP = Math.min(...lows);
+  if (levels) {
+    const allPrices = [maxP, minP];
+    if (levels.current) allPrices.push(levels.current);
+    if (levels.breakout) allPrices.push(levels.breakout);
+    if (levels.target) allPrices.push(levels.target);
+    if (levels.stop) allPrices.push(levels.stop);
+    maxP = Math.max(...allPrices);
+    minP = Math.min(...allPrices);
+  }
+  const range = (maxP - minP) || 1;
+  const padTop = 55;
+  const padBot = 55;
+  const drawH = h - padTop - padBot;
+  const barW = w / klines.length;
+  const toY = (p) => padTop + (1 - (p - minP) / range) * drawH;
+
+  ctx.strokeStyle = '#1a1f2a';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 5; i++) {
+    const y = padTop + (drawH / 5) * i;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+
+  klines.forEach((k, i) => {
+    const o = +k[1], c = +k[4], hi = +k[2], lo = +k[3];
+    const x = i * barW + barW / 2;
+    const yH = toY(hi), yL = toY(lo);
+    const yO = toY(o), yC = toY(c);
+    const isUp = c >= o;
+    const color = isUp ? '#3fb950' : '#f85149';
+    ctx.strokeStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x, yH);
+    ctx.lineTo(x, yL);
+    ctx.stroke();
+    ctx.fillStyle = color;
+    const bodyW = Math.max(1.5, barW - 1.5);
+    const bodyTop = Math.min(yO, yC);
+    const bodyH = Math.max(1, Math.abs(yC - yO));
+    ctx.fillRect(x - bodyW / 2, bodyTop, bodyW, bodyH);
+  });
+
+  function drawLevel(price, color, label, dashed) {
+    if (!price) return;
+    const y = toY(price);
+    if (y < 0 || y > h) return;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    if (dashed) ctx.setLineDash([5, 4]); else ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (label) {
+      ctx.font = 'bold 11px -apple-system, Tahoma, sans-serif';
+      const text = label + ' $' + (price >= 1 ? price.toFixed(price >= 100 ? 2 : 4) : price.toFixed(6));
+      const tw = ctx.measureText(text).width;
+      ctx.fillStyle = 'rgba(10,13,18,0.9)';
+      ctx.fillRect(w - tw - 12, y - 10, tw + 10, 18);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(w - tw - 12, y - 10, tw + 10, 18);
+      ctx.fillStyle = color;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, w - 8, y);
+    }
+  }
+
+  if (levels) {
+    if (levels.target) drawLevel(levels.target, '#3fb950', '🎯 هدف', true);
+    if (levels.stop) drawLevel(levels.stop, '#f85149', '🛑 وقف', true);
+    if (levels.breakout) drawLevel(levels.breakout, '#c9d1d9', '⚪ اختراق', true);
+    if (levels.current) drawLevel(levels.current, '#f0b90b', '🟡 السعر', true);
+  }
+}
+
+async function updateAllCharts() {
+  const items = document.querySelectorAll('.watch-item[data-symbol]');
+  const promises = [];
+  items.forEach(item => {
+    const sym = item.dataset.symbol;
+    const canvas = item.querySelector('.mini-chart');
+    if (!canvas) return;
+    const w = watchList.find(x => x.symbol === sym);
+    if (!w) return;
+    const levels = { current: w.lastPrice, breakout: w.breakoutTrigger, target: w.target, stop: w.stopTrigger };
+    promises.push(getChartData(sym).then(kl => { if (kl) drawMiniChart(canvas, kl, levels); }));
+  });
+  await Promise.all(promises);
+}
+
+/* ====================== WATCH ====================== */
+const WATCH_KEY = 'binance_watch_v65';
+let watchList = [];
+let watchTimer = null, watchCountdownTimer = null, nextCheckIn = 30;
+function loadWatch() { try { watchList = JSON.parse(localStorage.getItem(WATCH_KEY) || '[]'); } catch(e) { watchList = []; } }
+function saveWatch() { localStorage.setItem(WATCH_KEY, JSON.stringify(watchList)); updateWatchBadge(); }
+function addToWatch(data) {
+  if (watchList.find(w => w.symbol === data.symbol && (w.status === 'watching' || w.status === 'broken' || w.status === 'confirmed'))) {
+    alert('⚠️ موجودة');
+    return;
+  }
+  const entry = data.breakoutTrigger;
+  const stop = data.stopTrigger;
+  const target = data.target || calcProperTarget(entry, stop);
+  watchList.unshift({
+    symbol: data.symbol, name: data.symbol.replace('USDT',''),
+    score: data.score, entry, target, stop,
+    rangeHigh: data.rangeHigh12h, rangeLow: data.rangeLow12h,
+    breakoutTrigger: entry, stopTrigger: stop,
+    addedAt: Date.now(), status: 'watching',
+    lastPrice: data.currentPrice, lastCheck: Date.now(), brokeAt: null,
+    _candleChecked: false,
+    _lastCheckedClose: 0
+  });
+  saveWatch(); renderWatchList();
+  showToast('signal', '👁️ أضيفت للمراقبة', data.symbol.replace('USDT',''), `دخول $${fmtPrice(entry)}`);
+  playSuccessSound();
+}
+function removeFromWatch(symbol) {
+  if (!confirm(`إزالة ${symbol.replace('USDT','')}؟`)) return;
+  watchList = watchList.filter(w => w.symbol !== symbol);
+  chartCache.delete(symbol);
+  saveWatch(); renderWatchList();
+}
+function clearBroken() {
+  if (!confirm('مسح المكتملة؟')) return;
+  watchList.filter(w => w.status !== 'watching').forEach(w => chartCache.delete(w.symbol));
+  watchList = watchList.filter(w => w.status === 'watching');
+  saveWatch(); renderWatchList();
+}
+function updateWatchBadge() {
+  const n = watchList.filter(w => w.status === 'watching' || w.status === 'confirmed' || w.status === 'broken').length;
+  const tab = document.querySelector('.tab[data-tab="watch"]');
+  if (tab) tab.textContent = n ? `👁️ المراقبة (${n})` : '👁️ المراقبة';
+}
+async function checkWatchPrices() {
+  const active = watchList.filter(w => w.status === 'watching' || w.status === 'broken');
+  const pending = trades.filter(t => t.result === 'pending');
+  if (!active.length && !pending.length) return;
+  try {
+    const url = await api('/api/v3/ticker/price');
+    const prices = {};
+    if (Array.isArray(url)) url.forEach(t => prices[t.symbol] = +t.price);
+    for (const w of watchList) {
+      if (w.status !== 'watching' && w.status !== 'broken') continue;
+      const p = prices[w.symbol];
+      if (!p) continue;
+      w.lastPrice = p; w.lastCheck = Date.now();
+      checkBreakoutLive(w, p);
+      checkClosedCandle(w);
+    }
+    pending.forEach(t => {
+      const p = prices[t.symbol];
+      if (!p) return;
+      if (p >= t.target) closeTradeAuto(t.id, t.target);
+      else if (p <= t.stop) closeTradeAuto(t.id, t.stop);
+    });
+    saveWatch(); renderWatchList();
+    document.getElementById('lastCheckTime').textContent = new Date().toLocaleTimeString('ar-EG');
+    setTimeout(updateAllCharts, 100);
+  } catch(e) { console.error(e); }
+}
+function startWatchMonitor() {
+  if (watchTimer) return;
+  if (!watchList.filter(w => w.status === 'watching' || w.status === 'broken').length && !trades.filter(t => t.result === 'pending').length) {
+    alert('⚠️ لا يوجد مراقبة');
+    return;
+  }
+  checkWatchPrices();
+  watchTimer = setInterval(checkWatchPrices, 30000);
+  nextCheckIn = 30;
+  watchCountdownTimer = setInterval(() => {
+    nextCheckIn = nextCheckIn <= 1 ? 30 : nextCheckIn - 1;
+    document.getElementById('nextCheckSec').textContent = nextCheckIn;
+  }, 1000);
+  document.getElementById('watchCountdown').style.display = 'block';
+  document.getElementById('startWatch').textContent = '✅ نشطة';
+  document.getElementById('startWatch').disabled = true;
+  document.getElementById('stopWatch').disabled = false;
+  playSuccessSound();
+}
+function stopWatchMonitor() {
+  if (watchTimer) { clearInterval(watchTimer); watchTimer = null; }
+  if (watchCountdownTimer) { clearInterval(watchCountdownTimer); watchCountdownTimer = null; }
+  document.getElementById('watchCountdown').style.display = 'none';
+  document.getElementById('startWatch').textContent = '▶️ ابدأ المراقبة';
+  document.getElementById('startWatch').disabled = false;
+  document.getElementById('stopWatch').disabled = true;
+}
+function renderWatchList() {
+  const box = document.getElementById('watchList');
+  if (!watchList.length) {
+    box.innerHTML = '<div class="empty">لا عملات</div>';
+    return;
+  }
+  box.innerHTML = watchList.map(w => {
+    const pct = w.status === 'confirmed' ? 100 : w.status === 'broken' ? 100 :
+      Math.max(0, Math.min(100, ((w.lastPrice - w.rangeLow) / ((w.breakoutTrigger - w.rangeLow) || 1)) * 100));
+    const sc = w.status === 'confirmed' ? 'confirmed' : w.status === 'broken' ? 'broken' : w.status === 'failed' ? 'failed' : '';
+    const bc = w.status === 'confirmed' ? 'confirmed' : w.status === 'broken' ? 'broken' : w.status === 'failed' ? 'failed' : 'watching';
+    const bt = w.status === 'confirmed' ? '🎯 مؤكد — ادخل!' : w.status === 'broken' ? '⏳ جاري العد' : w.status === 'failed' ? '❌ فشل' : '👁️ مراقبة';
+    const pp = ((w.lastPrice - w.entry) / w.entry) * 100;
+    const pc = pp > 0 ? 'up' : pp < 0 ? 'down' : '';
+    const inJ = trades.find(t => t.symbol === w.symbol && t.result === 'pending');
+    const rr = ((w.target - w.entry) / (w.entry - w.stop)).toFixed(1);
+    const hintText = w.status === 'confirmed' ? '🎯 شمعة أغلقت فوق الاختراق — ادخل الآن!' :
+      w.status === 'broken' ? '⏳ اخترق — ننتظر إغلاق شمعة 1س' :
+      w.status === 'failed' ? '❌ فشل — تجاهل' : '⏳ انتظر الاختراق';
+    const timerHtml = (w.status === 'broken' && w.brokeAt) ? `
+      <div class="per-coin-timer">
+        ⏰ تُغلق الشمعة بعد: <b class="candle-time-remaining">${getTimeUntilClose(w.brokeAt)}</b>
+      </div>
+    ` : '';
+    return `
+      <div class="watch-item ${sc}" data-symbol="${w.symbol}">
+        <div class="watch-top">
+          <div>
+            <span class="watch-symbol">${w.name}</span>
+            <span style="font-size:10px;background:#f0b90b;color:#0d1117;padding:2px 6px;border-radius:4px;margin-right:6px">${w.score}/100</span>
+          </div>
+          <span class="watch-badge ${bc}">${bt}</span>
+        </div>
+        <div class="entry-card ${w.status}">
+          <div class="entry-card-label">🎯 سعر الدخول</div>
+          <div class="price-controls">
+            <button class="price-zoom-btn" onclick="event.stopPropagation();changeChartSize(-30)">−</button>
+            <div class="entry-card-price">$${fmtPrice(w.entry)}</div>
+            <button class="price-zoom-btn" onclick="event.stopPropagation();changeChartSize(30)">+</button>
+          </div>
+          <div class="entry-card-hint">${hintText}</div>
+          <div class="levels-grid">
+            <div class="level-mini target"><div class="level-mini-label">🎯 هدف</div><div class="level-mini-val">$${fmtPrice(w.target)}</div></div>
+            <div class="level-mini stop"><div class="level-mini-label">🛑 وقف</div><div class="level-mini-val">$${fmtPrice(w.stop)}</div></div>
+            <div class="level-mini rr"><div class="level-mini-label">R:R</div><div class="level-mini-val">${rr}x</div></div>
+          </div>
+        </div>
+        ${timerHtml}
+        <div class="mini-chart-legend">
+          <span><span class="dot dot-gold"></span>السعر</span>
+          <span><span class="dot dot-silver"></span>دخول</span>
+          <span><span class="dot dot-green"></span>هدف</span>
+          <span><span class="dot dot-red"></span>وقف</span>
+        </div>
+        <div class="mini-chart-wrap"><canvas class="mini-chart"></canvas></div>
+        <div class="watch-info">
+          <div><span class="watch-label">🔴 السعر الحي:</span> <span class="live-price">$${fmtPrice(w.lastPrice)}</span></div>
+          <div><span class="watch-label">من الدخول:</span> <span class="live-pnl ${pc}">${pp >= 0 ? '+' : ''}${pp.toFixed(2)}%</span></div>
+          <div><span class="watch-label">${w.status === 'confirmed' ? '🎯 تأكيد:' : w.status === 'broken' ? '⏳ اخترق:' : 'أضيف:'}</span> <span class="watch-val">${timeAgo(w.confirmedAt || w.brokeAt || w.addedAt)}</span></div>
+          <div><span class="watch-label">الطريق:</span> <span class="watch-val">${pct.toFixed(0)}%</span></div>
+        </div>
+        ${w.status === 'watching' ? `<div class="watch-progress"><div class="watch-progress-fill" style="width:${pct}%"></div></div>` : ''}
+        ${w.status === 'broken' ? `<div class="forecast" style="border-color:#f0b90b;color:#f0d99e;margin-top:8px"><b>⏳ اخترق</b> — ننتظر إغلاق شمعة 1س. إذا أغلقت فوق $${fmtPrice(w.breakoutTrigger)} → إشارة مؤكدة</div>` : ''}
+        ${w.status === 'confirmed' ? `<div class="forecast" style="border-color:#3fb950;color:#a9e6b8;margin-top:8px;background:#3fb95022"><b>🎯 إشارة مؤكدة!</b> شمعة 1س أغلقت فوق الاختراق — <b>ادخل الآن</b><br>سعر الدخول: $${fmtPrice(w.confirmedPrice || w.entry)} | الوقف: $${fmtPrice(w.stop)} | الهدف: $${fmtPrice(w.target)}</div>` : ''}
+        <div class="watch-actions">
+          ${(w.status === 'confirmed' || w.status === 'broken') && !inJ ? `<button class="journal-btn" onclick="saveBrokenToJournal('${w.symbol}')" style="flex:2">📒 سجل</button>` : ''}
+          ${inJ ? `<button style="flex:2;background:#58a6ff;color:white;border-color:#58a6ff">📒 ✓</button>` : ''}
+          <button onclick="analyzeSymbol('${w.symbol}')" style="background:#21262d;color:#e6edf3;border-color:#30363d">🔍</button>
+          <button onclick="removeFromWatch('${w.symbol}')" style="background:#f85149;color:white;border-color:#f85149">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+  updateWatchBadge();
+  setTimeout(() => { applyFontSize(); updateAllCharts(); }, 80);
+}
+function saveBrokenToJournal(symbol) {
+  const w = watchList.find(x => x.symbol === symbol);
+  if (!w) return;
+  const s = prompt(`💰 كمية (1% = $5)`, '5');
+  if (s === null) return;
+  const a = parseFloat(s);
+  if (!a || a <= 0) return alert('كمية غير صحيحة');
+  addTrade({ symbol: w.symbol, score: w.score, entry: w.entry, amount: a, target: w.target, stop: w.stop, fromWatch: true });
+  alert(`✅`);
+  playCashSound();
+}
+
+/* ====================== MOMENTUM SCANNER ====================== */
+let momentumScanning = false, momAutoTimer = null;
+let currentMomData = [], momFilter = 65, momNotified = new Set();
+async function scanMomentum(sym, ticker) {
+  try {
+    const [kl5, kl15, kl1h] = await Promise.all([
+      api('/api/v3/klines', { symbol: sym, interval: '5m', limit: 200 }),
+      api('/api/v3/klines', { symbol: sym, interval: '15m', limit: 100 }),
+      api('/api/v3/klines', { symbol: sym, interval: '1h', limit: 24 })
+    ]);
+    const sc = momentumScore(kl5, kl15, kl1h, ticker);
+    if (!sc) return null;
+    return { symbol: sym, ticker, ...sc };
+  } catch(e) { return null; }
+}
+async function startMomentumScan() {
+  if (momentumScanning) return;
+  momentumScanning = true;
+  const btn = document.getElementById('startMomentum');
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري المسح...';
+  const st = document.getElementById('momStatus');
+  st.className = 'status explode';
+  st.textContent = '⚡ تحديث BTC...';
+  const pw = document.getElementById('momProgress');
+  pw.classList.add('show');
+  const pf = document.getElementById('momProgressFill');
+  const pt = document.getElementById('momProgressText');
+  pf.style.width = '0%';
+
+  try {
+    await updateBTCStatus();
+    if (!isBTCPumping()) {
+      st.className = 'status error';
+      st.textContent = `❌ BTC نازل (${btcChange1h.toFixed(2)}% 1س) — لا تدخل الآن`;
+      pw.classList.remove('show');
+      momentumScanning = false;
+      btn.disabled = false;
+      btn.textContent = '⚡ ابدأ المسح';
+      return;
+    }
+
+    momNotified.clear();
+    const all = await api('/api/v3/ticker/24hr');
+    const minVol = +document.getElementById('momQuote').value;
+    const topN = +document.getElementById('momTop').value;
+    const list = filterTickers(all, minVol, topN);
+    st.textContent = `⚡ فحص ${list.length} (BTC ${btcChange1h >= 0 ? '+' : ''}${btcChange1h.toFixed(2)}%)...`;
+    const results = [];
+    const batch = 8;
+    for (let i = 0; i < list.length; i += batch) {
+      const b = list.slice(i, i + batch);
+      const partial = await Promise.all(b.map(t => scanMomentum(t.symbol, t)));
+      partial.forEach(p => {
+        if (!p) return;
+        results.push(p);
+        if (p.score >= 75 && !momNotified.has(p.symbol)) {
+          momNotified.add(p.symbol);
+          showToast('momentum', '✅ إشارة مؤكدة!', p.symbol.replace('USDT',''), `${p.score}/100`);
+          playMomentumSound();
+          sendBrowserNotif('✅ ' + p.symbol.replace('USDT',''), `${p.score}/100`, 'mom-' + p.symbol);
+        }
+      });
+      const done = Math.min(i + batch, list.length);
+      pf.style.width = (done / list.length) * 100 + '%';
+      pt.textContent = `${done} / ${list.length} • قريبين: ${results.filter(r => r.score >= 65).length}`;
+    }
+    results.sort((a, b) => b.score - a.score);
+    currentMomData = results;
+    renderMomentumResults(results.filter(r => r.score >= momFilter));
+    st.className = 'status success';
+    st.textContent = `✅ ${results.filter(r => r.score >= 65).length} إشارة قريبة من الاختراق`;
+    pw.classList.remove('show');
+    document.getElementById('momFilters').style.display = 'flex';
+  } catch(e) {
+    st.className = 'status error';
+    st.textContent = '❌ ' + e.message;
+    pw.classList.remove('show');
+  }
+  momentumScanning = false;
+  btn.disabled = false;
+  btn.textContent = '⚡ ابدأ المسح';
+}
+function renderMomentumResults(arr) {
+  const box = document.getElementById('momResults');
+  const top = arr.slice(0, 15);
+  if (!top.length) {
+    box.innerHTML = '<div class="empty">✅ لا إشارات قريبة من الاختراق (0.2%) حالياً</div>';
+    return;
+  }
+  let html = '';
+  top.forEach((r, idx) => {
+    const s = r.score;
+    const cls = scoreClass(s);
+    const rk = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
+    const reasonsHtml = r.reasons.map(x => `<span class="reason-chip ${x.c}">${x.t}</span>`).join('');
+    const dataStr = JSON.stringify({
+      symbol: r.symbol, score: r.score,
+      entry: r.entry, target: r.target, stop: r.stop,
+      rangeHigh12h: r.rangeHigh12h, rangeLow12h: r.entry * 0.97,
+      breakoutTrigger: r.entry, stopTrigger: r.stop,
+      currentPrice: r.currentPrice
+    }).replace(/'/g, "&apos;");
+    const inW = watchList.find(w => w.symbol === r.symbol && (w.status === 'watching' || w.status === 'broken' || w.status === 'confirmed'));
+    const distPct = (r.distToHigh * 100).toFixed(2);
+    html += `
+      <div class="token confirmed">
+        <div class="token-header">
+          <div>
+            <span class="rank ${rk}">${idx + 1}</span>
+            <span class="token-name">${r.symbol.replace('USDT','')}</span>
+            <span class="token-symbol">USDT</span>
+          </div>
+          <span class="confirmed-badge">✅ ${scoreLabel(s)}</span>
+        </div>
+        <div class="score-gauge">
+          <div class="score-circle ${cls}">${s}</div>
+          <div class="score-info">
+            <div class="score-title">النقاط: ${s}/100</div>
+            <div class="score-desc">📏 يبعد ${distPct}% • حجم ×${r.volRatio.toFixed(1)}</div>
+          </div>
+        </div>
+        <div class="token-stats">
+          <div><span class="stat-name">السعر:</span> <span class="stat-val">$${fmtPrice(+r.ticker.lastPrice)}</span></div>
+          <div><span class="stat-name">الاختراق:</span> <span class="stat-val gold">$${fmtPrice(r.rangeHigh12h)}</span></div>
+          <div><span class="stat-name">24س:</span> <span class="stat-val ${r.change24 >= 0 ? 'up' : 'down'}">${fmtPct(r.change24)}</span></div>
+          <div><span class="stat-name">RSI:</span> <span class="stat-val">${r.rsi.toFixed(1)}</span></div>
+        </div>
+        <div class="reasons-wrap">${reasonsHtml}</div>
+        <div class="strategy">
+          <div class="strategy-item"><span class="strategy-label">🎯 دخول</span><span class="strategy-value entry">$${fmtPrice(r.entry)}</span></div>
+          <div class="strategy-item"><span class="strategy-label">🎯 هدف</span><span class="strategy-value target">$${fmtPrice(r.target)}</span></div>
+          <div class="strategy-item"><span class="strategy-label">🛑 وقف</span><span class="strategy-value stop">$${fmtPrice(r.stop)}</span></div>
+          <div class="strategy-item"><span class="strategy-label">R:R</span><span class="strategy-value target">3.0x</span></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+          <button onclick="analyzeSymbol('${r.symbol}')" style="font-size:11px;padding:8px;flex:1;min-width:80px;background:#21262d;color:#e6edf3;border-color:#30363d">🔍</button>
+          ${inW
+            ? `<button style="font-size:11px;padding:8px;flex:1;min-width:80px;background:#58a6ff;color:white;border-color:#58a6ff">👁️ ✓</button>`
+            : `<button class="breakout-btn" onclick='addToWatch(${dataStr})' style="font-size:11px;padding:8px;flex:1;min-width:80px">👁️ راقب</button>`
+          }
+          <button class="momentum-btn" style="font-size:11px;padding:8px;flex:2;min-width:140px;background:linear-gradient(135deg,#238636,#3fb950)" onclick="quickMomentumJournal('${r.symbol}', ${s}, ${r.entry}, ${r.target}, ${r.stop})">⚡ دخول</button>
+        </div>
+      </div>
+    `;
+  });
+  box.innerHTML = html;
+}
+function quickMomentumJournal(symbol, score, entry, target, stop) {
+  const s = prompt(`✅ دخول — ${symbol.replace('USDT','')}\n\nدخول: $${fmtPrice(entry)}\nهدف: $${fmtPrice(target)}\nوقف: $${fmtPrice(stop)}\n\nالكمية 1% = $5:`, '5');
+  if (s === null) return;
+  const a = parseFloat(s);
+  if (!a || a <= 0) return alert('كمية غير صحيحة');
+  if (a > 15) { if (!confirm(`⚠️ ${a}$ كبير؟`)) return; }
+  addTrade({ symbol, score, entry, amount: a, target, stop });
+  alert(`✅`);
+  playCashSound();
+}
+
+/* ====================== EXPLODE SCANNER ====================== */
+let explodeScanning = false, currentExpData = [], expFilter = 65;
+async function scanOneExplode(sym, ticker) {
+  try {
+    const [kl1h, kl4h] = await Promise.all([
+      api('/api/v3/klines', { symbol: sym, interval: '1h', limit: 200 }),
+      api('/api/v3/klines', { symbol: sym, interval: '4h', limit: 100 })
+    ]);
+    const sc = explosionScore(kl1h, kl4h, ticker);
+    if (!sc) return null;
+    return { symbol: sym, ticker, ...sc };
+  } catch(e) { return null; }
+}
+async function startExplosionScan() {
+  if (explodeScanning) return;
+  explodeScanning = true;
+  const btn = document.getElementById('startExplode');
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري الفحص...';
+  const st = document.getElementById('expStatus');
+  st.className = 'status explode';
+  st.textContent = '🔄 جلب...';
+  const pw = document.getElementById('expProgress');
+  pw.classList.add('show');
+  const pf = document.getElementById('expProgressFill');
+  const pt = document.getElementById('expProgressText');
+  pf.style.width = '0%';
+  try {
+    await updateBTCStatus();
+    const all = await api('/api/v3/ticker/24hr');
+    const minVol = +document.getElementById('expQuote').value;
+    const topN = +document.getElementById('expTop').value;
+    const list = filterTickers(all, minVol, topN);
+    st.textContent = `🔎 فحص ${list.length}...`;
+    const results = [];
+    const batch = 6;
+    for (let i = 0; i < list.length; i += batch) {
+      const b = list.slice(i, i + batch);
+      const partial = await Promise.all(b.map(t => scanOneExplode(t.symbol, t)));
+      partial.forEach(p => { if (p) results.push(p); });
+      const done = Math.min(i + batch, list.length);
+      pf.style.width = (done / list.length) * 100 + '%';
+      pt.textContent = `${done} / ${list.length} • ${results.filter(r => r.score >= 65).length} مرشح`;
+    }
+    results.sort((a, b) => b.score - a.score);
+    currentExpData = results;
+    renderExplodeResults(results.filter(r => r.score >= expFilter));
+    st.className = 'status success';
+    st.textContent = `✅ ${results.filter(r => r.score >= 65).length} مرشح للتجميع`;
+    pw.classList.remove('show');
+    document.getElementById('expFilters').style.display = 'flex';
+  } catch(e) {
+    st.className = 'status error';
+    st.textContent = '❌ ' + e.message;
+    pw.classList.remove('show');
+  }
+  explodeScanning = false;
+  btn.disabled = false;
+  btn.textContent = '🚀 ابدأ الكشف';
+}
+function renderExplodeResults(arr) {
+  const box = document.getElementById('explodeResults');
+  const top = arr.slice(0, 20);
+  if (!top.length) { box.innerHTML = '<div class="empty">لا نتائج بـ +65</div>'; return; }
+  let html = '';
+  top.forEach((r, idx) => {
+    const s = r.score;
+    const cls = scoreClass(s);
+    const rk = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
+    const isHot = s >= 75;
+    const inW = watchList.find(w => w.symbol === r.symbol && (w.status === 'watching' || w.status === 'broken' || w.status === 'confirmed'));
+    const reasonsHtml = r.reasons.map(x => `<span class="reason-chip ${x.c}">${x.t}</span>`).join('');
+    const dataStr = JSON.stringify({
+      symbol: r.symbol, score: r.score,
+      entry: r.entry, target: r.target, stop: r.stop,
+      rangeHigh12h: r.rangeHigh12h, rangeLow12h: r.rangeLow12h,
+      breakoutTrigger: r.entry, stopTrigger: r.stop,
+      currentPrice: r.currentPrice
+    }).replace(/'/g, "&apos;");
+    html += `
+      <div class="token ${isHot ? 'hot' : 'explode'}">
+        <div class="token-header">
+          <div>
+            <span class="rank ${rk}">${idx + 1}</span>
+            <span class="token-name">${r.symbol.replace('USDT','')}</span>
+            <span class="token-symbol">USDT</span>
+          </div>
+          <span class="hot-badge">${scoreLabel(s)}</span>
+        </div>
+        <div class="score-gauge">
+          <div class="score-circle ${cls}">${s}</div>
+          <div class="score-info">
+            <div class="score-title">نقاط التجميع: ${s}/100</div>
+            <div class="score-desc">⚪ اختراق $${fmtPrice(r.breakoutTrigger)}</div>
+          </div>
+        </div>
+        <div class="token-stats">
+          <div><span class="stat-name">السعر:</span> <span class="stat-val">$${fmtPrice(+r.ticker.lastPrice)}</span></div>
+          <div><span class="stat-name">24س:</span> <span class="stat-val ${r.change24 >= 0 ? 'up' : 'down'}">${fmtPct(r.change24)}</span></div>
+          <div><span class="stat-name">حجم:</span> <span class="stat-val">$${fmtVol(r.quoteVol24)}</span></div>
+          <div><span class="stat-name">RSI:</span> <span class="stat-val">${r.rsi.toFixed(1)}</span></div>
+        </div>
+        <div class="reasons-wrap">${reasonsHtml}</div>
+        <div class="strategy">
+          <div class="strategy-item"><span class="strategy-label">🎯 دخول</span><span class="strategy-value entry">$${fmtPrice(r.entry)}</span></div>
+          <div class="strategy-item"><span class="strategy-label">🎯 هدف</span><span class="strategy-value target">$${fmtPrice(r.target)}</span></div>
+          <div class="strategy-item"><span class="strategy-label">🛑 وقف</span><span class="strategy-value stop">$${fmtPrice(r.stop)}</span></div>
+          <div class="strategy-item"><span class="strategy-label">R:R</span><span class="strategy-value target">3.0x</span></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+          <button onclick="analyzeSymbol('${r.symbol}')" style="font-size:11px;padding:8px;flex:1;min-width:80px;background:#21262d;color:#e6edf3;border-color:#30363d">🔍</button>
+          ${inW
+            ? `<button style="font-size:11px;padding:8px;flex:1;min-width:80px;background:#58a6ff;color:white;border-color:#58a6ff">👁️ ✓</button>`
+            : `<button class="breakout-btn" onclick='addToWatch(${dataStr})' style="font-size:11px;padding:8px;flex:1;min-width:80px">👁️ راقب</button>`
+          }
+        </div>
+      </div>
+    `;
+  });
+  box.innerHTML = html;
+}
+
+/* ====================== SINGLE ====================== */
+async function analyzeSymbol(symbol) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.tab[data-tab="single"]').classList.add('active');
+  document.querySelectorAll('#panel-momentum, #panel-explode, #panel-watch, #panel-journal, #panel-single, #panel-history, #panel-backup').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-single').style.display = 'block';
+  document.getElementById('singleInput').value = symbol.replace('USDT','');
+  await analyzeSingleCoin();
+}
+async function analyzeSingleCoin() {
+  let s = document.getElementById('singleInput').value.trim().toUpperCase();
+  if (!s) return;
+  if (!s.endsWith('USDT')) s += 'USDT';
+  const st = document.getElementById('singleStatus');
+  const res = document.getElementById('singleResult');
+  st.className = 'status loading';
+  st.textContent = '🔄 جاري التحليل...';
+  res.innerHTML = '';
+  try {
+    await updateBTCStatus();
+    const [ticker, kl5, kl15, kl1h, kl4h] = await Promise.all([
+      api('/api/v3/ticker/24hr', { symbol: s }),
+      api('/api/v3/klines', { symbol: s, interval: '5m', limit: 200 }),
+      api('/api/v3/klines', { symbol: s, interval: '15m', limit: 100 }),
+      api('/api/v3/klines', { symbol: s, interval: '1h', limit: 200 }),
+      api('/api/v3/klines', { symbol: s, interval: '4h', limit: 100 })
+    ]);
+    const mom = momentumScore(kl5, kl15, kl1h, ticker);
+    const exp = explosionScore(kl1h, kl4h, ticker);
+    const closes = kl1h.map(k => +k[4]);
+    const rsiV = calcRSI(closes, 14);
+    const lastPrice = +ticker.lastPrice;
+
+    if (!mom && !exp) {
+      res.innerHTML = `
+        <div class="token single" style="border-color:#f85149">
+          <div class="token-header">
+            <div><span class="token-name">${s.replace('USDT','')}</span></div>
+            <span class="hot-badge" style="background:linear-gradient(135deg,#f85149,#8b0000)">🚫 مرفوضة</span>
+          </div>
+          <div class="forecast" style="border-color:#f85149;color:#ffb3ae">
+            لا إشارة — $${fmtPrice(lastPrice)} | ${fmtPct(+ticker.priceChangePercent)}
+          </div>
+        </div>
+      `;
+      st.className = 'status success';
+      st.textContent = 'لا إشارة';
+      setTimeout(() => st.style.display = 'none', 2500);
+      return;
+    }
+    const momScore = mom ? mom.score : 0;
+    const expScore = exp ? exp.score : 0;
+    const bestScore = Math.max(momScore, expScore);
+    const bestType = momScore >= expScore ? 'momentum' : 'explode';
+    const best = momScore >= expScore ? mom : exp;
+    const cls = scoreClass(bestScore);
+    const reasonsHtml = best.reasons.map(x => `<span class="reason-chip ${x.c}">${x.t}</span>`).join('');
+    const breakoutTrigger = best.breakoutTrigger || best.entry;
+    const stopTrigger = best.stopTrigger || best.stop;
+    const target = best.target || calcProperTarget(breakoutTrigger, stopTrigger);
+
+    res.innerHTML = `
+      <div class="token single ${bestType === 'momentum' ? 'confirmed' : ''}">
+        <div class="token-header">
+          <div><span class="token-name">${s.replace('USDT','')}</span><span class="token-symbol">USDT</span></div>
+          <span class="hot-badge">${bestType === 'momentum' ? '✅ مؤكد' : '🚀 تجميع'} ${bestScore}/100</span>
+        </div>
+        <div class="entry-card">
+          <div class="entry-card-label">🎯 سعر الدخول</div>
+          <div class="price-controls">
+            <button class="price-zoom-btn" onclick="changeChartSize(-30)">−</button>
+            <div class="entry-card-price">$${fmtPrice(breakoutTrigger)}</div>
+            <button class="price-zoom-btn" onclick="changeChartSize(30)">+</button>
+          </div>
+          <div class="entry-card-hint">⏳ انتظر إغلاق شمعة 1س فوقه</div>
+          <div class="levels-grid">
+            <div class="level-mini target"><div class="level-mini-label">🎯</div><div class="level-mini-val">$${fmtPrice(target)}</div></div>
+            <div class="level-mini stop"><div class="level-mini-label">🛑</div><div class="level-mini-val">$${fmtPrice(stopTrigger)}</div></div>
+            <div class="level-mini rr"><div class="level-mini-label">R:R</div><div class="level-mini-val">3.0x</div></div>
+          </div>
+        </div>
+        <div class="mini-chart-legend">
+          <span><span class="dot dot-gold"></span>السعر</span>
+          <span><span class="dot dot-silver"></span>دخول</span>
+          <span><span class="dot dot-green"></span>هدف</span>
+          <span><span class="dot dot-red"></span>وقف</span>
+        </div>
+        <div class="mini-chart-wrap"><canvas class="mini-chart" id="singleChart"></canvas></div>
+        <div class="score-gauge">
+          <div class="score-circle ${cls}">${bestScore}</div>
+          <div class="score-info">
+            <div class="score-title">النقاط: ${bestScore}/100</div>
+            <div class="score-desc">زخم: ${momScore} • تجميع: ${expScore}</div>
+          </div>
+        </div>
+        <div class="token-stats">
+          <div><span class="stat-name">السعر:</span> <span class="stat-val" style="color:#f0b90b">$${fmtPrice(lastPrice)}</span></div>
+          <div><span class="stat-name">24س:</span> <span class="stat-val ${+ticker.priceChangePercent >= 0 ? 'up' : 'down'}">${fmtPct(+ticker.priceChangePercent)}</span></div>
+          <div><span class="stat-name">RSI:</span> <span class="stat-val">${rsiV.toFixed(1)}</span></div>
+          <div><span class="stat-name">حجم:</span> <span class="stat-val">×${(best.volRatio||1).toFixed(1)}</span></div>
+        </div>
+        <div class="reasons-wrap">${reasonsHtml}</div>
+        <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+          <button class="breakout-btn" onclick='addToWatch(${JSON.stringify({symbol: s, score: bestScore, entry: breakoutTrigger, target, stop: stopTrigger, rangeHigh12h: best.rangeHigh12h || best.entry * 1.02, rangeLow12h: best.rangeLow12h || best.entry * 0.98, breakoutTrigger, stopTrigger, currentPrice: best.currentPrice}).replace(/'/g, "&apos;")})' style="font-size:11px;padding:8px;flex:1">👁️ راقب</button>
+          <button class="analyze-btn" style="font-size:11px;padding:8px;flex:1" onclick="saveToHistory('${s}', ${bestScore})">💾</button>
+        </div>
+      </div>
+    `;
+    setTimeout(() => {
+      const c = document.getElementById('singleChart');
+      if (c) drawMiniChart(c, kl5.slice(-144), { current: lastPrice, breakout: breakoutTrigger, target, stop: stopTrigger });
+      applyFontSize();
+    }, 80);
+    st.className = 'status success';
+    st.textContent = '✅';
+    setTimeout(() => st.style.display = 'none', 2000);
+  } catch(e) {
+    st.className = 'status error';
+    st.textContent = '❌ ' + (e.message || 'فشل');
+  }
+}
+
+/* ====================== HISTORY ====================== */
+function getHistory() { try { return JSON.parse(localStorage.getItem('binance_history_v65') || '[]'); } catch(e) { return []; } }
+function saveToHistory(symbol, score) {
+  const arr = getHistory();
+  arr.unshift({ symbol, score, date: Date.now() });
+  localStorage.setItem('binance_history_v65', JSON.stringify(arr.slice(0, 50)));
+  alert('✅');
+}
+function renderHistory() {
+  const arr = getHistory();
+  const box = document.getElementById('historyList');
+  if (!arr.length) { box.innerHTML = '<div class="empty">لا سجل</div>'; return; }
+  box.innerHTML = arr.map(h => `
+    <div class="history-item">
+      <div class="history-header"><span class="history-symbol">${h.symbol}</span><span class="history-score">${h.score}/100</span></div>
+      <div class="history-date">${fmtDateTime(h.date)}</div>
+    </div>
+  `).join('');
+}
+
+/* ====================== BACKUP ====================== */
+function updateBackupStats() {
+  try {
+    document.getElementById('bkWatch').textContent = watchList.length;
+    document.getElementById('bkTrades').textContent = trades.length;
+    document.getElementById('bkHistory').textContent = getHistory().length;
+    const total = JSON.stringify({ watch: watchList, trades, history: getHistory() }).length;
+    document.getElementById('bkSize').textContent = (total / 1024).toFixed(1) + ' KB';
+  } catch(e) {}
+}
+function exportBackup() {
+  const data = { version: 'v6.5', exportedAt: new Date().toISOString(), watchList, trades, history: getHistory() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `backup-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  playCashSound();
+  alert('✅');
+}
+function importBackup() { document.getElementById('backupFile').click(); }
+function handleBackupFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!confirm('⚠️ استبدال؟')) return;
+      if (Array.isArray(data.watchList)) watchList = data.watchList;
+      if (Array.isArray(data.trades)) trades = data.trades;
+      if (Array.isArray(data.history)) localStorage.setItem('binance_history_v65', JSON.stringify(data.history));
+      saveWatch(); saveTrades();
+      renderWatchList(); renderTrades(); renderHistory();
+      updateBackupStats();
+      alert('✅');
+    } catch(err) { alert('❌ ' + err.message); }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+/* ====================== CALCULATOR ====================== */
+function updatePositionCalc() {
+  const cap = +document.getElementById('calcCapital').value || 0;
+  const pct = +document.getElementById('calcPercent').value || 1;
+  const size = (cap * pct) / 100;
+  document.getElementById('calcResult').textContent = '$' + size.toFixed(2);
+}
+
+/* ====================== TABS ====================== */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const n = tab.dataset.tab;
+    document.querySelectorAll('#panel-momentum, #panel-explode, #panel-watch, #panel-journal, #panel-single, #panel-history, #panel-backup').forEach(p => p.style.display = 'none');
+    document.getElementById('panel-' + n).style.display = 'block';
+    if (n === 'history') renderHistory();
+    if (n === 'watch') { renderWatchList(); setTimeout(updateAllCharts, 100); }
+    if (n === 'journal') renderTrades();
+    if (n === 'backup') updateBackupStats();
+  });
+});
+
+/* ====================== EVENTS ====================== */
+document.getElementById('rulesToggle').addEventListener('click', (e) => {
+  document.getElementById('rulesBody').classList.toggle('hidden');
+});
+document.getElementById('startMomentum').addEventListener('click', startMomentumScan);
+document.getElementById('startExplode').addEventListener('click', startExplosionScan);
+document.getElementById('analyzeSingle').addEventListener('click', analyzeSingleCoin);
+document.getElementById('singleInput').addEventListener('keydown', e => { if (e.key === 'Enter') analyzeSingleCoin(); });
+document.getElementById('clearHistory').addEventListener('click', () => {
+  if (confirm('مسح؟')) { localStorage.removeItem('binance_history_v65'); renderHistory(); }
+});
+document.querySelectorAll('.quick-pick').forEach(q => {
+  q.addEventListener('click', () => {
+    document.getElementById('singleInput').value = q.dataset.sym;
+    analyzeSingleCoin();
+  });
+});
+document.querySelectorAll('#momFilters .filter-chip').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('#momFilters .filter-chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    momFilter = +c.dataset.min;
+    renderMomentumResults(currentMomData.filter(r => r.score >= momFilter));
+  });
+});
+document.querySelectorAll('#expFilters .filter-chip').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('#expFilters .filter-chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    expFilter = +c.dataset.min;
+    renderExplodeResults(currentExpData.filter(r => r.score >= expFilter));
+  });
+});
+document.querySelectorAll('#jFilters .filter-chip').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('#jFilters .filter-chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    journalFilter = c.dataset.filter;
+    renderTrades();
+  });
+});
+document.getElementById('momSoundToggle').addEventListener('click', (e) => {
+  soundEnabled = !soundEnabled;
+  e.target.classList.toggle('on', soundEnabled);
+  e.target.textContent = soundEnabled ? '🔔 صوت الزخم' : '🔕';
+  if (soundEnabled) playSuccessSound();
+});
+document.getElementById('autoMomentum').addEventListener('click', (e) => {
+  if (momAutoTimer) {
+    clearInterval(momAutoTimer); momAutoTimer = null;
+    e.target.textContent = '🔄 تلقائي 90ث';
+  } else {
+    momAutoTimer = setInterval(startMomentumScan, 90000);
+    e.target.textContent = '⏹️';
+    startMomentumScan();
+  }
+});
+document.getElementById('startWatch').addEventListener('click', startWatchMonitor);
+document.getElementById('stopWatch').addEventListener('click', stopWatchMonitor);
+document.getElementById('jAddBtn').addEventListener('click', () => {
+  const sym = document.getElementById('jSymbol').value.trim().toUpperCase().replace('USDT','');
+  const score = +document.getElementById('jScore').value || 0;
+  const entry = +document.getElementById('jEntry').value;
+  const amount = +document.getElementById('jAmount').value;
+  const target = +document.getElementById('jTarget').value;
+  const stop = +document.getElementById('jStop').value;
+  if (!sym) return alert('اسم العملة');
+  if (!entry || entry <= 0) return alert('سعر دخول');
+  if (!amount || amount <= 0) return alert('كمية');
+  if (!target || target <= entry) return alert('هدف أعلى');
+  if (!stop || stop >= entry) return alert('وقف أقل');
+  if (score < 65 && !confirm(`⚠️ ${score} أقل من +65 — متأكد؟`)) return;
+  addTrade({ symbol: sym + 'USDT', score, entry, amount, target, stop });
+  ['jSymbol','jScore','jEntry','jTarget','jStop'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('jAmount').value = '5';
+  alert('✅');
+});
+document.getElementById('jClearBtn').addEventListener('click', () => {
+  ['jSymbol','jScore','jEntry','jTarget','jStop'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('jAmount').value = '5';
+});
+document.getElementById('jStop').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('jAddBtn').click(); });
+document.getElementById('jExportBtn').addEventListener('click', exportTrades);
+document.getElementById('jClearAllBtn').addEventListener('click', () => {
+  if (!trades.length) return alert('لا صفقات');
+  if (confirm('⚠️ حذف الكل؟') && confirm('تأكيد؟')) {
+    trades = []; saveTrades(); renderTrades();
+  }
+});
+document.getElementById('calcCapital').addEventListener('input', updatePositionCalc);
+document.getElementById('calcPercent').addEventListener('input', updatePositionCalc);
+document.getElementById('backupExport').addEventListener('click', exportBackup);
+document.getElementById('backupImport').addEventListener('click', importBackup);
+document.getElementById('backupFile').addEventListener('change', handleBackupFile);
+document.getElementById('openModal').addEventListener('click', () => document.getElementById('modal').classList.add('show'));
+document.getElementById('closeModal').addEventListener('click', () => document.getElementById('modal').classList.remove('show'));
+document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') e.target.classList.remove('show'); });
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { updateAllCharts(); applyFontSize(); }, 400);
+});
+
+window.addEventListener('beforeunload', () => {
+  if (priceWS) { try { priceWS.close(); } catch(e) {} }
+});
+
+/* ====================== INIT ====================== */
+loadWatch();
+loadTrades();
+loadFontSize();
+loadChartSize();
+renderWatchList();
+renderTrades();
+renderHistory();
+updatePositionCalc();
+updateBTCStatus();
+connectPriceWebSocket();
+applyFontSize();
+setTimeout(requestNotifPermission, 3000);
+if (watchList.filter(w => w.status === 'watching' || w.status === 'broken').length || trades.filter(t => t.result === 'pending').length) {
+  setTimeout(() => { if (!watchTimer) startWatchMonitor(); }, 2000);
+}
+</script>
+</body>
+</html>
